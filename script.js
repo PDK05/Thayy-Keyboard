@@ -74,28 +74,11 @@ ta.addEventListener("keydown", (e)=>{
     let group = VOWELS[key];
     let idx = group.indexOf(prevChar);
 
-    // cycle nguyên âm
     if (idx !== -1) {
       replaceLast(group[(idx + 1) % group.length]);
-      return;
-    }
-
-    let cons = ta.value[pos - 1];
-    let vowel = group[0];
-
-    // ⭐ không có phụ âm → gõ độc lập
-    if (!cons || !Object.values(CONS).flat().includes(cons)) {
-      insert(vowel);
-      return;
-    }
-
-    // ⭐ có phụ âm → ghép
-    if (key === "e" || key === "o") {
-      replaceLast(vowel + cons);
     } else {
-      replaceLast(cons + vowel);
+      insert(group[0]); // ⭐ chỉ insert, không ghép
     }
-
     return;
   }
 
