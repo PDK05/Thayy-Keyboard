@@ -34,6 +34,8 @@ function insert(text){
 
 function replaceLast(text){
   let s = ta.selectionStart;
+  if (s === 0) return; // tránh lỗi
+
   let v = ta.value;
   ta.value = v.slice(0,s-1) + text + v.slice(s);
   ta.selectionStart = ta.selectionEnd = s;
@@ -50,7 +52,7 @@ function cycle(dir){
 // ===== MAIN =====
 ta.addEventListener("keydown", (e)=>{
 
-  // ===== ⭐ PHÍM CONTROL (đặt lên đầu) =====
+  // ===== PHÍM HỆ THỐNG =====
   if (
     e.ctrlKey || e.metaKey ||
     e.key === "Backspace" ||
@@ -60,15 +62,24 @@ ta.addEventListener("keydown", (e)=>{
     return;
   }
 
-  // ===== ⭐ FIX CHÍNH: = / + =====
-  if (e.key === "=" || e.key === "+") {
+  // ===== ⭐ FIX MỌI LOẠI "=" =====
+  if (
+    e.key === "=" ||
+    e.key === "+" ||
+    e.code === "Equal" ||
+    e.code === "NumpadAdd"
+  ) {
     e.preventDefault();
     cycle(+1);
     return;
   }
 
-  // ===== ⭐ FIX: - =====
-  if (e.key === "-") {
+  // ===== ⭐ FIX MỌI LOẠI "-" =====
+  if (
+    e.key === "-" ||
+    e.code === "Minus" ||
+    e.code === "NumpadSubtract"
+  ) {
     e.preventDefault();
     cycle(-1);
     return;
@@ -111,6 +122,6 @@ ta.addEventListener("keydown", (e)=>{
     return;
   }
 
-  // reset nếu gõ ký tự khác
+  // ===== RESET =====
   lastGroup = null;
 });
