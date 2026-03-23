@@ -10,7 +10,6 @@ const CONS = {
   n: ["น", "ณ"]
 };
 
-// Cấu trúc lại VOWELS để tách biệt cặp ngắn-dài và các biến thể xoay vòng
 const VOWELS = {
   a: { short: "ะ", long: "า", variants: ["ะ", "า", "ั"] },
   i: { short: "ิ", long: "ี", variants: ["ิ", "ี", "ึ", "ื"] },
@@ -48,8 +47,12 @@ function cycle(dir) {
   const charBefore = ta.value[pos - 1];
   let idx = lastGroup.indexOf(charBefore);
   if (idx === -1) return;
+  
   const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
   replaceLast(lastGroup[newIndex]);
+  
+  // Quan trọng: Khi nhấn cycle, reset toggle để phím nguyên âm tiếp theo là insert mới
+  isVowelToggle = false; 
 }
 
 // ===== EVENT LISTENER =====
@@ -57,16 +60,29 @@ ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
+  // 1. Phím hệ thống
   if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
-    if (!key.startsWith("Arrow")) { lastGroup = null; lastKey = null; }
+    if (!key.startsWith("Arrow")) { 
+        lastGroup = null; 
+        lastKey = null; 
+        isVowelToggle = false;
+    }
     return;
   }
 
-  // CYCLE (= / -)
-  if (key === "=" || key === "+") { e.preventDefault(); cycle(1); return; }
-  if (key === "-") { e.preventDefault(); cycle(-1); return; }
+  // 2. CYCLE (= / -)
+  if (key === "=" || key === "+") { 
+    e.preventDefault(); 
+    cycle(1); 
+    return; 
+  }
+  if (key === "-") { 
+    e.preventDefault(); 
+    cycle(-1); 
+    return; 
+  }
 
-  // CONSONANTS
+  // 3. CONSONANTS
   if (CONS[kLow]) {
     e.preventDefault();
     insert(CONS[kLow][0]);
@@ -76,27 +92,27 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // VOWELS (Logic aa -> า | a= -> ั)
+  // 4. VOWELS (aa -> า | a= -> ั)
   if (VOWELS[kLow]) {
     e.preventDefault();
     const vData = VOWELS[kLow];
 
     if (lastKey === kLow && !isVowelToggle) {
-      // Nhấn lần 2: Thay ะ bằng า
+      // Lần 2: Thay short bằng long (ะ -> า)
       replaceLast(vData.long);
       isVowelToggle = true; 
     } else {
-      // Nhấn lần 1 hoặc lần 3: Chèn ะ
+      // Lần 1 hoặc lần 3: Insert short (ะ)
       insert(vData.short);
       isVowelToggle = false;
     }
 
-    lastGroup = vData.variants; // Luôn gán group variants để phím = có thể xoay vòng
+    lastGroup = vData.variants; 
     lastKey = kLow;
     return;
   }
 
-  // TONES
+  // 5. TONES
   if (key === "'") {
     e.preventDefault();
     insert(TONES[0]);
@@ -106,7 +122,10 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  lastGroup = null;
-  lastKey = null;
-  isVowelToggle = false;
+  // Reset cho các phím khác
+  if (key !== "Shift") {
+    lastGroup = null;
+    lastKey = null;
+    isVowelToggle = false;
+  }
 });
