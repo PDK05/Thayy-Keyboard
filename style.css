@@ -1,47 +1,57 @@
-html, body {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    font-family: sans-serif;
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Căn giữa mọi thứ theo chiều ngang */
-}
-
-h2 {
-    width: 95%; /* Thu hẹp tiêu đề theo ô nhập liệu */
-    max-width: 1200px; 
-    margin: 20px 0 10px 0;
-    font-size: 22px;
-}
-
-#input {
-    width: 95%; /* Thu hẹp chiều ngang lại còn 95% màn hình */
-    max-width: 1200px; /* Giới hạn tối đa để không bị quá dài trên màn hình máy tính lớn */
-    min-height: 150px; 
-    background-color: #333333;
-    color: #ffffff;
-    border: 1px solid #555;
-    border-radius: 8px; /* Bo góc một chút cho đẹp */
+    align-items: center;
     padding: 20px;
-    font-size: 26px;
+    margin: 0;
+}
+
+/* Ô nhập liệu giống Lexilogos */
+#input {
+    width: 90%;
+    max-width: 1000px;
+    height: 200px;
+    background-color: #444;
+    color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    font-size: 28px;
     outline: none;
-    
-    /* Cho phép kéo dài xuống */
-    resize: vertical; 
-    overflow-y: auto; 
-    
-    display: block;
+    resize: vertical;
     box-sizing: border-box;
 }
 
-.guide {
-    width: 95%;
-    max-width: 1200px;
-    margin-top: 15px;
-    color: #888;
-    font-size: 0.9rem;
-    line-height: 1.6;
+/* Khu vực nút bấm */
+.toolbar {
+    margin: 10px 0;
+    display: flex;
+    gap: 5px;
+}
+
+button {
+    background-color: #eee;
+    color: #000;
+    border: 1px solid #999;
+    padding: 5px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 3px;
+}
+
+button:hover { background-color: #ccc; }
+
+/* Bảng hướng dẫn ký tự (nhìn cho chuyên nghiệp) */
+.char-map {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    width: 90%;
+    max-width: 1000px;
+    margin-top: 20px;
+    border-top: 1px solid #333;
+    padding-top: 20px;
 }
