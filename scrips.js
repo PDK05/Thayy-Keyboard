@@ -1,28 +1,11 @@
+const textarea = document.getElementById("input");
+
 const CONSONANT_GROUPS = {
   "K": ["ข", "ฃ", "ค", "ฅ", "ฆ"],
   "s": ["ซ", "ส", "ศ", "ษ"],
   "C": ["ฉ", "ช", "ฌ"],
   "T": ["ฐ", "ฑ", "ฒ", "ถ", "ท", "ธ"],
   "P": ["ผ", "พ", "ภ"]
-};
-
-const SPECIAL_MAP = {
-  "d=": "ḍ",
-  "t=": "ṭ",
-  "l=": "ḷ",
-  "h=": "ḥ"
-};
-
-const VOWELS = {
-  "aa": "า",
-  "ii": "ี",
-  "uu": "ู",
-  "ee": "แ",
-  "a": "ะ",
-  "i": "ิ",
-  "u": "ุ",
-  "e": "เ",
-  "o": "โ"
 };
 
 const TONES = {
@@ -32,47 +15,97 @@ const TONES = {
   4: "๋"
 };
 
-// cycle consonant
-function resolveConsonant(char, count) {
-  let group = CONSONANT_GROUPS[char];
-  if (!group) return char;
-  return group[(count - 1) % group.length];
+// lấy vị trí con trỏ
+function getCursor() {
+  return textarea.selectionStart;
 }
 
-// parse text
-function process(input) {
-  let output = "";
+// set lại con trỏ
+function setCursor(pos) {
+  textarea.setSelectionRange(pos, pos);
+}
 
-  // xử lý phụ âm lặp (K, s, ...)
-  input = input.replace(/(K+|s+|C+|T+|P+)/g, (match) => {
-    let key = match[0];
-    return resolveConsonant(key, match.length);
-  });
+// thay text tại cursor
+function replaceText(start, end, newText) {
+  let value = textarea.value;
+  textarea.value = value.slice(0, start) + newText + value.slice(end);
+  setCursor(start + newText.length);
+}
 
-  // special
-  for (let key in SPECIAL_MAP) {
-    input = input.replaceAll(key, SPECIAL_MAP[key]);
+// xử lý phụ âm lặp
+function handleConsonant(char) {
+  let pos = getCursor();
+  let text = textarea.value;
+
+  // lấy chuỗi phía trước
+  let i = pos - 1;
+  let count = 0;
+
+  while (i >= 0 && text[i] === char) {
+    count++;
+    i--;
   }
 
-  // vowel
-  for (let key in VOWELS) {
-    input = input.replaceAll(key, VOWELS[key]);
+  let group = CONSONANT_GROUPS[char];
+  if (!group) return;
+
+  let newChar = group[count % group.length];
+
+  // thay toàn bộ chuỗi lặp bằng 1 ký tự
+  replaceText(i + 1, pos, newChar);
+}
+
+// xử lý tone '
+function handleTone() {
+  let pos = getCursor();
+  let text = textarea.value;
+
+  let i = pos - 1;
+  let count = 0;
+
+  while (i >= 0 && text[i] === "'") {
+    count++;
+    i--;
+  }
+
+  let tone = TONES[count];
+  if (!tone) return;
+
+  replaceText(i + 1, pos, tone);
+}
+
+// xử lý -n
+function handleFinalN() {
+  let pos = getCursor();
+  let text = textarea.value;
+
+  if (text[pos - 2] === "-" && text[pos - 1] === "n") {
+    replaceText(pos - 2, pos, "น");
+  }
+}
+
+// keydown chính
+textarea.addEventListener("input", (e) => {
+  let pos = getCursor();
+  let text = textarea.value;
+
+  let char = text[pos - 1];
+
+  // phụ âm cycle
+  if (CONSONANT_GROUPS[char]) {
+    handleConsonant(char);
+    return;
   }
 
   // tone
-  input = input.replace(/'+/g, (match) => {
-    let tone = TONES[match.length];
-    return tone ? tone : "";
-  });
+  if (char === "'") {
+    handleTone();
+    return;
+  }
 
-  // final nasal
-  input = input.replace(/-n/g, "น");
-
-  return input;
-}
-
-// realtime update
-document.getElementById("input").addEventListener("input", (e) => {
-  let text = e.target.value;
-  document.getElementById("output").innerText = process(text);
+  // final
+  if (char === "n") {
+    handleFinalN();
+    return;
+  }
 });
