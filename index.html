@@ -1,6 +1,30 @@
 <body>
-    <h2>Phiên âm tiếng Thái IME</h2>
-    <textarea id="input" placeholder="Gõ tại đây..."></textarea>
-    <div class="guide">Gõ k, s, c... để xoay vòng. Nhấn phím ' để thêm dấu.</div>
+    <h2>Thai Keyboard Online</h2>
+    
+    <textarea id="input" placeholder="Gõ trực tiếp bằng bàn phím (k, a, i, u, t...)"></textarea>
+
+    <div class="toolbar">
+        <button onclick="copyText()">Copy</button>
+        <button onclick="clearText()">Clear</button>
+        <button id="modeBtn">Light Mode</button>
+    </div>
+
+    <div class="char-map">
+        <div><strong>Consonants:</strong> k, s, c, t, p, n...</div>
+        <div><strong>Vowels:</strong> a, i, u, e, o...</div>
+        <div><strong>Tones:</strong> Phím ' để xoay vòng</div>
+    </div>
+
     <script src="script.js"></script>
+    <script>
+        function copyText() {
+            const ta = document.getElementById("input");
+            ta.select();
+            document.execCommand("copy");
+            alert("Đã copy văn bản!");
+        }
+        function clearText() {
+            document.getElementById("input").value = "";
+        }
+    </script>
 </body>
