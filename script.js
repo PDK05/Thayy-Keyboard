@@ -1,63 +1,139 @@
 const ta = document.getElementById("input");
 
-// Bảng mã hóa: Phím gõ -> Danh sách ký tự xoay vòng
+// ===== DATA =====
 const CONS = {
-    "k": ["ข", "ฃ", "ค", "ฅ", "ฆ"],
-    "s": ["ซ", "ส", "ศ", "ษ"],
-    "c": ["ฉ", "ช", "ฌ"],
-    "t": ["ฐ", "ฑ", "ฒ", "ถ", "ท", "ธ"],
-    "p": ["ผ", "พ", "ภ"]
+  "K": ["ข","ฃ","ค","ฅ","ฆ"],
+  "s": ["ซ","ส","ศ","ษ"],
+  "C": ["ฉ","ช","ฌ"],
+  "T": ["ฐ","ฑ","ฒ","ถ","ท","ธ"],
+  "P": ["ผ","พ","ภ"]
 };
 
-/**
- * Chèn ký tự mới vào vị trí con trỏ hiện tại
- */
-function insertText(text) {
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const fullText = ta.value;
+const VOWELS = {
+  "a":  {pos:"after", char:"ะ"},
+  "aa": {pos:"after", char:"า"},
+  "i":  {pos:"above", char:"ิ"},
+  "ii": {pos:"above", char:"ี"},
+  "u":  {pos:"below", char:"ุ"},
+  "uu": {pos:"below", char:"ู"},
+  "e":  {pos:"before",char:"เ"},
+  "ee": {pos:"before",char:"แ"},
+  "o":  {pos:"before",char:"โ"}
+};
 
-    ta.value = fullText.slice(0, start) + text + fullText.slice(end);
-    
-    // Đưa con trỏ ra sau ký tự vừa chèn
-    ta.selectionStart = ta.selectionEnd = start + text.length;
+const TONES = ["","่","้","๊","๋"];
+
+// ===== STATE =====
+let lastConsonantPos = -1;
+
+// ===== UTILS =====
+function insert(text){
+  let s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
+  ta.value = v.slice(0,s) + text + v.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
-/**
- * Thay thế 1 ký tự đứng ngay trước con trỏ
- */
-function replaceLastChar(newChar) {
-    const pos = ta.selectionStart;
-    const fullText = ta.value;
-
-    if (pos > 0) {
-        ta.value = fullText.slice(0, pos - 1) + newChar + fullText.slice(pos);
-        ta.selectionStart = ta.selectionEnd = pos;
-    }
+function replaceAt(pos,len,text){
+  let v=ta.value;
+  ta.value = v.slice(0,pos) + text + v.slice(pos+len);
+  ta.selectionStart = ta.selectionEnd = pos + text.length;
 }
 
-// Lắng nghe sự kiện gõ phím
-ta.addEventListener("keydown", (e) => {
-    const key = e.key.toLowerCase();
-    const group = CONS[key];
+// ===== CONSONANT =====
+function handleConsonant(key){
+  let pos = ta.selectionStart;
+  let v = ta.value;
 
-    // Nếu phím nhấn nằm trong bảng định nghĩa
-    if (group) {
-        e.preventDefault(); // Ngăn trình duyệt tự gõ ký tự tiếng Anh vào textarea
+  // đếm số lần lặp
+  let i = pos-1, count = 0;
+  while(i>=0 && v[i] === key){ count++; i--; }
 
-        const pos = ta.selectionStart;
-        const charBefore = ta.value[pos - 1];
+  let group = CONS[key];
+  let char = group[count % group.length];
 
-        // Kiểm tra xem ký tự trước đó có thuộc cùng nhóm phím này không
-        const currentIndex = group.indexOf(charBefore);
+  // thay Latin bằng Thai
+  replaceAt(i+1, count, char);
 
-        if (currentIndex !== -1) {
-            // Đã có chữ Thái thuộc nhóm này -> Xoay vòng sang chữ tiếp theo
-            const nextIndex = (currentIndex + 1) % group.length;
-            replaceLastChar(group[nextIndex]);
-        } else {
-            // Chưa có hoặc là chữ khác -> Chèn chữ đầu tiên trong nhóm
-            insertText(group[0]);
-        }
-    }
+  lastConsonantPos = i+1;
+}
+
+// ===== VOWEL =====
+function handleVowel(key){
+  if(lastConsonantPos < 0) return;
+
+  let v = VOWELS[key];
+  if(!v) return;
+
+  let cons = ta.value[lastConsonantPos];
+
+  let result;
+
+  if(v.pos === "after") result = cons + v.char;
+  if(v.pos === "before") result = v.char + cons;
+  if(v.pos === "above") result = cons + v.char;
+  if(v.pos === "below") result = cons + v.char;
+
+  replaceAt(lastConsonantPos, 1, result);
+
+  // reset để tránh đè tiếp
+  lastConsonantPos = -1;
+}
+
+// ===== TONE =====
+function handleTone(){
+  let pos = ta.selectionStart;
+  let v = ta.value;
+
+  let i = pos-1, count=0;
+  while(i>=0 && v[i]==="'"){ count++; i--; }
+
+  let tone = TONES[count] || "";
+
+  replaceAt(i+1, count, tone);
+}
+
+// ===== FINAL =====
+function handleFinalN(){
+  let pos = ta.selectionStart;
+  let v = ta.value;
+
+  if(v[pos-2] === "-" && v[pos-1] === "n"){
+    replaceAt(pos-2, 2, "น");
+  }
+}
+
+// ===== MAIN =====
+ta.addEventListener("keydown", e=>{
+  let k = e.key;
+
+  // ===== consonant =====
+  if(CONS[k]){
+    e.preventDefault();
+    insert(k);
+    handleConsonant(k);
+    return;
+  }
+
+  // ===== vowel =====
+  if(["a","i","u","e","o"].includes(k)){
+    e.preventDefault();
+    handleVowel(k);
+    return;
+  }
+
+  // ===== tone =====
+  if(k === "'"){
+    e.preventDefault();
+    insert("'");
+    handleTone();
+    return;
+  }
+
+  // ===== final =====
+  if(k === "n"){
+    e.preventDefault();
+    insert("n");
+    handleFinalN();
+    return;
+  }
 });
