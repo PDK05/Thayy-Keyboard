@@ -11,23 +11,16 @@ const CONS = {
 };
 
 const VOWELS = {
-  "a": "ะ",
-  "i": "ิ",
-  "u": "ุ",
-  "e": "เ",
-  "o": "โ"
+  "a": ["ะ", "า"],
+  "i": ["ิ", "ี", "ึ", "ื"],
+  "u": ["ุ", "ู"],
+  "e": ["เ", "แ"],
+  "o": ["โ", "ใ", "ไ"]
 };
 
-const TONES = ["่", "้", "๊", "๋"]; // Dấu thanh
+const TONES = ["่", "้", "๊", "๋"];
 
 // ===== UTILS =====
-function replaceLast(newChar) {
-  let s = ta.selectionStart;
-  let v = ta.value;
-  ta.value = v.slice(0, s - 1) + newChar + v.slice(s);
-  ta.selectionStart = ta.selectionEnd = s;
-}
-
 function insert(text) {
   let s = ta.selectionStart;
   let v = ta.value;
@@ -35,56 +28,57 @@ function insert(text) {
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
-// ===== MAIN EVENT =====
+function replaceLast(newChar) {
+  let s = ta.selectionStart;
+  let v = ta.value;
+  ta.value = v.slice(0, s - 1) + newChar + v.slice(s);
+  ta.selectionStart = ta.selectionEnd = s;
+}
+
+// ===== MAIN =====
 ta.addEventListener("keydown", (e) => {
   let key = e.key.toLowerCase();
   let pos = ta.selectionStart;
   let prevChar = ta.value[pos - 1];
 
-  // 1. XỬ LÝ PHỤ ÂM (Consonants) - Gõ liên tiếp để xoay vòng
+  // 1. Xử lý Phụ âm (Consonants) - Gõ 'k' liên tiếp để đổi chữ
   if (CONS[key]) {
     e.preventDefault();
     let group = CONS[key];
     let idx = group.indexOf(prevChar);
-
     if (idx !== -1) {
-      // Nếu đã có chữ trong nhóm, xoay vòng
       replaceLast(group[(idx + 1) % group.length]);
     } else {
-      // Nếu chưa có, chèn chữ đầu tiên
       insert(group[0]);
     }
     return;
   }
 
-  // 2. XỬ LÝ NGUYÊN ÂM (Vowels)
+  // 2. Xử lý Nguyên âm (Vowels) - Gõ 'a' liên tiếp để đổi nguyên âm ngắn/dài
   if (VOWELS[key]) {
     e.preventDefault();
-    let vChar = VOWELS[key];
-    
-    // Logic đặc biệt cho 'e' và 'o' (thường đứng trước phụ âm trong tiếng Thái)
-    // Nhưng để đơn giản cho bộ gõ này, ta cứ chèn vào vị trí con trỏ
-    insert(vChar);
+    let group = VOWELS[key];
+    let idx = group.indexOf(prevChar);
+    if (idx !== -1) {
+      replaceLast(group[(idx + 1) % group.length]);
+    } else {
+      insert(group[0]);
+    }
     return;
   }
 
-  // 3. XỬ LÝ DẤU THANH (Tones) - Dùng phím nháy đơn (') để xoay vòng dấu
+  // 3. Xử lý Dấu thanh (Tones) - Gõ phím (') liên tiếp
   if (key === "'") {
     e.preventDefault();
     let idx = TONES.indexOf(prevChar);
-    
     if (idx !== -1) {
-      // Xoay vòng qua các dấu: ่ -> ้ -> ๊ -> ๋ -> mất dấu
-      if (idx === TONES.length - 1) {
-        replaceLast(""); // Hết vòng thì xóa dấu
-      } else {
-        replaceLast(TONES[idx + 1]);
-      }
+      if (idx === TONES.length - 1) replaceLast(""); 
+      else replaceLast(TONES[idx + 1]);
     } else {
-      insert(TONES[0]); // Chèn dấu đầu tiên
+      insert(TONES[0]);
     }
     return;
   }
 });
 
-console.log("Thai IME Script Ready!");
+console.log("Thai IME: Ready to type!");
