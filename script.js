@@ -1,5 +1,6 @@
 const ta = document.getElementById("input");
 
+// ===== DATA =====
 const CONS = {
   k: ["ข", "ฃ", "ค", "ฅ", "ฆ"],
   s: ["ซ", "ส", "ศ", "ษ"],
@@ -19,96 +20,110 @@ const VOWELS = {
 
 const TONES = ["่", "้", "๊", "๋"];
 
+// ===== STATE =====
 let lastGroup = null;
-let lastIndex = -1;
 let lastKey = null;
 
-// Helper to insert at cursor
+// ===== UTILS =====
 function insert(text) {
-  const start = ta.selectionStart;
-  const end = ta.selectionEnd;
-  const val = ta.value;
-  ta.value = val.slice(0, start) + text + val.slice(end);
-  ta.selectionStart = ta.selectionEnd = start + text.length;
+  const s = ta.selectionStart;
+  const v = ta.value;
+  ta.value = v.slice(0, s) + text + v.slice(s);
+  ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
-// Helper to replace the character immediately behind the cursor
 function replaceLast(text) {
-  const pos = ta.selectionStart;
-  if (pos === 0) return;
-  const val = ta.value;
-  // Replace 1 char back and maintain cursor
-  ta.value = val.slice(0, pos - 1) + text + val.slice(pos);
-  ta.selectionStart = ta.selectionEnd = pos; 
+  const s = ta.selectionStart;
+  if (s === 0) return;
+  const v = ta.value;
+  // Thay thế 1 ký tự ngay trước con trỏ
+  ta.value = v.slice(0, s - 1) + text + v.slice(s);
+  ta.selectionStart = ta.selectionEnd = s;
 }
 
 function cycle(dir) {
-  if (!lastGroup || lastGroup.length === 0) return;
+  if (!lastGroup) return;
+
+  const pos = ta.selectionStart;
+  const currentChar = ta.value[pos - 1];
+
+  // Tìm vị trí hiện tại của ký tự trong mảng group
+  let idx = lastGroup.indexOf(currentChar);
   
-  // Increment/Decrement index
-  lastIndex = (lastIndex + dir + lastGroup.length) % lastGroup.length;
-  replaceLast(lastGroup[lastIndex]);
+  // Nếu không tìm thấy (do con trỏ đã di chuyển hoặc xóa), không làm gì cả
+  if (idx === -1) return;
+
+  const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
+  replaceLast(lastGroup[newIndex]);
 }
 
+// ===== EVENT LISTENER =====
 ta.addEventListener("keydown", (e) => {
-  if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-    // Reset state on navigation/deletion
-    if (!e.key.startsWith("Arrow")) { lastKey = null; lastGroup = null; }
+  const key = e.key;
+  const kLow = key.toLowerCase();
+
+  // 1. Phím điều khiển hệ thống (Cho phép mặc định)
+  if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
+    // Nếu xóa hoặc di chuyển, reset trạng thái để tránh cycle nhầm
+    if (key !== "ArrowLeft" && key !== "ArrowRight") {
+        lastGroup = null;
+        lastKey = null;
+    }
     return;
   }
 
-  const key = e.key.toLowerCase();
-
-  // 1. CONSONANTS
-  if (CONS[key]) {
+  // 2. Xử lý Cycle (+ / = / -)
+  if (key === "=" || key === "+") {
     e.preventDefault();
-    insert(CONS[key][0]);
-    lastGroup = CONS[key];
-    lastIndex = 0;
-    lastKey = key;
+    cycle(1);
+    return;
+  }
+  if (key === "-") {
+    e.preventDefault();
+    cycle(-1);
     return;
   }
 
-  // 2. VOWELS (with Double-Tap Logic)
-  if (VOWELS[key]) {
+  // 3. Xử lý Consonants (Phụ âm)
+  if (CONS[kLow]) {
     e.preventDefault();
-    const group = VOWELS[key].variants;
+    insert(CONS[kLow][0]);
+    lastGroup = CONS[kLow];
+    lastKey = kLow;
+    return;
+  }
 
-    if (lastKey === key) {
-      // Toggle between first and second variant (usually Short -> Long)
-      lastIndex = (lastIndex === 0) ? 1 : 0;
-      replaceLast(group[lastIndex]);
+  // 4. Xử lý Vowels (Nguyên âm)
+  if (VOWELS[kLow]) {
+    e.preventDefault();
+    const group = VOWELS[kLow].variants;
+    
+    // Nếu nhấn cùng 1 phím nguyên âm liên tiếp -> Đổi giữa 2 biến thể đầu (Ngắn <-> Dài)
+    if (lastKey === kLow) {
+      const pos = ta.selectionStart;
+      const charBefore = ta.value[pos - 1];
+      let idx = group.indexOf(charBefore);
+      let nextIdx = (idx === 0) ? 1 : 0; // Toggle 0 và 1
+      replaceLast(group[nextIdx]);
     } else {
       insert(group[0]);
-      lastIndex = 0;
     }
-    
+
     lastGroup = group;
-    lastKey = key;
+    lastKey = kLow;
     return;
   }
 
-  // 3. TONES (Triggered by single quote)
+  // 5. Xử lý Tones (Dấu) - Dùng phím nháy đơn '
   if (key === "'") {
     e.preventDefault();
     insert(TONES[0]);
     lastGroup = TONES;
-    lastIndex = 0;
     lastKey = key;
     return;
   }
 
-  // Reset state if any other key is pressed
-  lastKey = null;
+  // 6. Reset nếu gõ phím khác (Space, Enter, số...)
   lastGroup = null;
-});
-
-ta.addEventListener("beforeinput", (e) => {
-  if (e.data === "=" || e.data === "+") {
-    e.preventDefault();
-    cycle(1);
-  } else if (e.data === "-") {
-    e.preventDefault();
-    cycle(-1);
-  }
+  lastKey = null;
 });
