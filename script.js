@@ -1,153 +1,113 @@
 const ta = document.getElementById("input");
 
-// ===== DATA =====
 const CONS = {
-  k: ["ข","ฃ","ค","ฅ","ฆ"],
-  s: ["ซ","ส","ศ","ษ"],
-  c: ["ฉ","ช","ฌ"],
-  t: ["ฐ","ฑ","ฒ","ถ","ท","ธ"],
-  p: ["ผ","พ","ภ"],
-  n: ["น","ณ"]
+  k: ["ข", "ฃ", "ค", "ฅ", "ฆ"],
+  s: ["ซ", "ส", "ศ", "ษ"],
+  c: ["ฉ", "ช", "ฌ"],
+  t: ["ฐ", "ฑ", "ฒ", "ถ", "ท", "ธ"],
+  p: ["ผ", "พ", "ภ"],
+  n: ["น", "ณ"]
 };
 
-// Nguyên âm + long + biến hình
 const VOWELS = {
-  a: { short: "ะ", long: "า", variants: ["ะ","ั","า"] },
-  i: { short: "ิ", long: "ี", variants: ["ิ","ี","ึ","ื"] },
-  u: { short: "ุ", long: "ู", variants: ["ุ","ู"] },
-  e: { short: "เ", long: "แ", variants: ["เ","แ"] },
-  o: { short: "โ", long: null, variants: ["โ","ใ","ไ"] }
+  a: { variants: ["ะ", "า", "ั"] },
+  i: { variants: ["ิ", "ี", "ึ", "ื"] },
+  u: { variants: ["ุ", "ู"] },
+  e: { variants: ["เ", "แ"] },
+  o: { variants: ["โ", "ใ", "ไ"] }
 };
 
-const TONES = ["่","้","๊","๋"];
+const TONES = ["่", "้", "๊", "๋"];
 
-// ===== STATE =====
 let lastGroup = null;
 let lastIndex = -1;
 let lastKey = null;
-let lastVowelPressPos = -1;
 
-// ===== UTILS =====
-function insert(text){
-  const s = ta.selectionStart;
-  const v = ta.value;
-  ta.value = v.slice(0,s) + text + v.slice(s);
-  ta.selectionStart = ta.selectionEnd = s + text.length;
+// Helper to insert at cursor
+function insert(text) {
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const val = ta.value;
+  ta.value = val.slice(0, start) + text + val.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + text.length;
 }
 
-function replaceLast(text){
-  const s = ta.selectionStart;
-  if (s === 0) return;
-  const v = ta.value;
+// Helper to replace the character immediately behind the cursor
+function replaceLast(text) {
+  const pos = ta.selectionStart;
+  if (pos === 0) return;
+  const val = ta.value;
+  // Replace 1 char back and maintain cursor
+  ta.value = val.slice(0, pos - 1) + text + val.slice(pos);
+  ta.selectionStart = ta.selectionEnd = pos; 
+}
 
-  // nếu là dấu đi kèm nguyên âm
-  if (["ั","ิ","ี","ึ","ื","ุ","ู"].includes(text)) {
-    ta.value = v.slice(0,s) + text + v.slice(s);
-    ta.selectionStart = ta.selectionEnd = s + 1;
+function cycle(dir) {
+  if (!lastGroup || lastGroup.length === 0) return;
+  
+  // Increment/Decrement index
+  lastIndex = (lastIndex + dir + lastGroup.length) % lastGroup.length;
+  replaceLast(lastGroup[lastIndex]);
+}
+
+ta.addEventListener("keydown", (e) => {
+  if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+    // Reset state on navigation/deletion
+    if (!e.key.startsWith("Arrow")) { lastKey = null; lastGroup = null; }
     return;
   }
 
-  ta.value = v.slice(0,s-1) + text + v.slice(s);
-  ta.selectionStart = ta.selectionEnd = s;
-}
-
-// ===== CYCLE VARIANTS (= / -) =====
-function cycle(dir){
-  if(!lastGroup) return;
-
-  const pos = ta.selectionStart;
-  const currentChar = ta.value[pos - 1];
-
-  let idx = lastGroup.indexOf(currentChar);
-  if (idx === -1) idx = lastIndex;
-
-  const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
-
-  replaceLast(lastGroup[newIndex]);
-  lastIndex = newIndex;
-}
-
-// ===== KEYDOWN =====
-ta.addEventListener("keydown", (e)=>{
-
-  // allow system keys
-  if (
-    e.ctrlKey || e.metaKey ||
-    e.key === "Backspace" ||
-    e.key === "Delete" ||
-    e.key.startsWith("Arrow")
-  ) return;
-
   const key = e.key.toLowerCase();
-  const pos = ta.selectionStart;
 
-  // ===== CONSONANT =====
+  // 1. CONSONANTS
   if (CONS[key]) {
     e.preventDefault();
-
     insert(CONS[key][0]);
-
     lastGroup = CONS[key];
     lastIndex = 0;
     lastKey = key;
-    lastVowelPressPos = -1; // reset
     return;
   }
 
-  // ===== VOWEL =====
+  // 2. VOWELS (with Double-Tap Logic)
   if (VOWELS[key]) {
     e.preventDefault();
+    const group = VOWELS[key].variants;
 
-    const v = VOWELS[key];
-
-    // double-key logic (long vowel)
-    if (lastKey === key && lastVowelPressPos === pos-1 && v.long) {
-      replaceLast(v.long);
-
-      lastGroup = v.variants;
-      lastIndex = v.variants.indexOf(v.long);
-      lastVowelPressPos = pos; // update cursor
-      return;
+    if (lastKey === key) {
+      // Toggle between first and second variant (usually Short -> Long)
+      lastIndex = (lastIndex === 0) ? 1 : 0;
+      replaceLast(group[lastIndex]);
+    } else {
+      insert(group[0]);
+      lastIndex = 0;
     }
-
-    // first press → short
-    insert(v.short);
-
-    lastGroup = v.variants;
-    lastIndex = v.variants.indexOf(v.short);
+    
+    lastGroup = group;
     lastKey = key;
-    lastVowelPressPos = pos;
     return;
   }
 
-  // ===== TONE =====
+  // 3. TONES (Triggered by single quote)
   if (key === "'") {
     e.preventDefault();
-
     insert(TONES[0]);
-
     lastGroup = TONES;
     lastIndex = 0;
     lastKey = key;
-    lastVowelPressPos = -1;
     return;
   }
 
-  // reset nếu ký tự khác
-  lastGroup = null;
+  // Reset state if any other key is pressed
   lastKey = null;
-  lastVowelPressPos = -1;
+  lastGroup = null;
 });
 
-// ===== BEFOREINPUT =====
-ta.addEventListener("beforeinput", (e)=>{
-
+ta.addEventListener("beforeinput", (e) => {
   if (e.data === "=" || e.data === "+") {
     e.preventDefault();
-    cycle(+1);
-  }
-
-  if (e.data === "-") {
+    cycle(1);
+  } else if (e.data === "-") {
     e.preventDefault();
     cycle(-1);
   }
