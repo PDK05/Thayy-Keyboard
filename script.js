@@ -10,7 +10,7 @@ const CONS = {
   n: ["น","ณ"]
 };
 
-// ⭐ tách rõ short / long / variants
+// Nguyên âm + long + biến hình
 const VOWELS = {
   a: { short: "ะ", long: "า", variants: ["ะ","ั","า"] },
   i: { short: "ิ", long: "ี", variants: ["ิ","ี","ึ","ื"] },
@@ -25,21 +25,22 @@ const TONES = ["่","้","๊","๋"];
 let lastGroup = null;
 let lastIndex = -1;
 let lastKey = null;
+let lastVowelPressPos = -1;
 
 // ===== UTILS =====
 function insert(text){
-  let s = ta.selectionStart;
-  let v = ta.value;
+  const s = ta.selectionStart;
+  const v = ta.value;
   ta.value = v.slice(0,s) + text + v.slice(s);
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
 function replaceLast(text){
-  let s = ta.selectionStart;
+  const s = ta.selectionStart;
   if (s === 0) return;
+  const v = ta.value;
 
-  let v = ta.value;
-
+  // nếu là dấu đi kèm nguyên âm
   if (["ั","ิ","ี","ึ","ื","ุ","ู"].includes(text)) {
     ta.value = v.slice(0,s) + text + v.slice(s);
     ta.selectionStart = ta.selectionEnd = s + 1;
@@ -50,25 +51,26 @@ function replaceLast(text){
   ta.selectionStart = ta.selectionEnd = s;
 }
 
-// ===== CYCLE VARIANT =====
+// ===== CYCLE VARIANTS (= / -) =====
 function cycle(dir){
   if(!lastGroup) return;
 
-  let pos = ta.selectionStart;
-  let currentChar = ta.value[pos - 1];
+  const pos = ta.selectionStart;
+  const currentChar = ta.value[pos - 1];
 
   let idx = lastGroup.indexOf(currentChar);
   if (idx === -1) idx = lastIndex;
 
-  let newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
+  const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
 
   replaceLast(lastGroup[newIndex]);
   lastIndex = newIndex;
 }
 
-// ===== MAIN =====
+// ===== KEYDOWN =====
 ta.addEventListener("keydown", (e)=>{
 
+  // allow system keys
   if (
     e.ctrlKey || e.metaKey ||
     e.key === "Backspace" ||
@@ -76,7 +78,8 @@ ta.addEventListener("keydown", (e)=>{
     e.key.startsWith("Arrow")
   ) return;
 
-  let key = e.key.toLowerCase();
+  const key = e.key.toLowerCase();
+  const pos = ta.selectionStart;
 
   // ===== CONSONANT =====
   if (CONS[key]) {
@@ -87,6 +90,7 @@ ta.addEventListener("keydown", (e)=>{
     lastGroup = CONS[key];
     lastIndex = 0;
     lastKey = key;
+    lastVowelPressPos = -1; // reset
     return;
   }
 
@@ -94,23 +98,25 @@ ta.addEventListener("keydown", (e)=>{
   if (VOWELS[key]) {
     e.preventDefault();
 
-    let v = VOWELS[key];
+    const v = VOWELS[key];
 
-    // ⭐ DOUBLE KEY → LONG
-    if (lastKey === key && v.long) {
+    // double-key logic (long vowel)
+    if (lastKey === key && lastVowelPressPos === pos-1 && v.long) {
       replaceLast(v.long);
 
       lastGroup = v.variants;
       lastIndex = v.variants.indexOf(v.long);
+      lastVowelPressPos = pos; // update cursor
       return;
     }
 
-    // ⭐ FIRST PRESS → SHORT
+    // first press → short
     insert(v.short);
 
     lastGroup = v.variants;
     lastIndex = v.variants.indexOf(v.short);
     lastKey = key;
+    lastVowelPressPos = pos;
     return;
   }
 
@@ -123,11 +129,14 @@ ta.addEventListener("keydown", (e)=>{
     lastGroup = TONES;
     lastIndex = 0;
     lastKey = key;
+    lastVowelPressPos = -1;
     return;
   }
 
+  // reset nếu ký tự khác
   lastGroup = null;
   lastKey = null;
+  lastVowelPressPos = -1;
 });
 
 // ===== BEFOREINPUT =====
