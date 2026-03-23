@@ -39,7 +39,7 @@ function replaceLast(text){
   ta.selectionStart = ta.selectionEnd = s;
 }
 
-// ===== APPLY CYCLE =====
+// ===== CYCLE =====
 function cycle(dir){
   if(!lastGroup) return;
 
@@ -50,7 +50,7 @@ function cycle(dir){
 // ===== MAIN =====
 ta.addEventListener("keydown", (e)=>{
 
-  // cho phép phím hệ thống
+  // ===== ⭐ PHÍM CONTROL (đặt lên đầu) =====
   if (
     e.ctrlKey || e.metaKey ||
     e.key === "Backspace" ||
@@ -60,21 +60,21 @@ ta.addEventListener("keydown", (e)=>{
     return;
   }
 
-  let key = e.key.toLowerCase();
-
-  // ===== = forward =====
-  if (key === "=") {
+  // ===== ⭐ FIX CHÍNH: = / + =====
+  if (e.key === "=" || e.key === "+") {
     e.preventDefault();
     cycle(+1);
     return;
   }
 
-  // ===== - backward =====
-  if (key === "-") {
+  // ===== ⭐ FIX: - =====
+  if (e.key === "-") {
     e.preventDefault();
     cycle(-1);
     return;
   }
+
+  let key = e.key.toLowerCase();
 
   // ===== CONSONANT =====
   if (CONS[key]) {
