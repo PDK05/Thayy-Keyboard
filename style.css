@@ -1,59 +1,48 @@
 body {
+    background-color: #1a1a1a; /* Nền đen đậm */
+    color: #ffffff; /* Chữ trắng */
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f0f2f5;
 }
 
-.container {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    width: 90%;
-    max-width: 600px;
-}
-
-h2 { 
-    color: #1a73e8; 
-    margin-top: 0; 
-    text-align: center;
+h2 {
+    width: 100%;
+    max-width: 800px;
+    text-align: left;
+    margin-bottom: 20px;
+    font-size: 24px;
 }
 
 #input {
     width: 100%;
-    height: 200px;
-    padding: 15px;
-    font-size: 28px; /* Chữ Thái cần to một chút để dễ nhìn */
-    border: 2px solid #ddd;
+    max-width: 800px;
+    height: 300px;
+    background-color: #262626; /* Màu ô nhập liệu hơi xám */
+    color: #ffffff;
+    border: 1px solid #333;
     border-radius: 8px;
-    resize: none;
+    padding: 15px;
+    font-size: 22px;
     outline: none;
-    transition: border-color 0.3s;
-    box-sizing: border-box;
-}
-
-#input:focus { 
-    border-color: #1a73e8; 
+    resize: none;
 }
 
 .guide {
-    margin-top: 15px;
-    font-size: 0.9rem;
-    color: #666;
-    line-height: 1.5;
-    background: #fff9c4;
-    padding: 10px;
-    border-radius: 5px;
+    width: 100%;
+    max-width: 800px;
+    margin-top: 20px;
+    color: #cccccc;
+    font-size: 14px;
+    line-height: 1.6;
 }
 
-code { 
-    background: #e0e0e0; 
-    padding: 2px 4px; 
-    border-radius: 4px; 
-    font-weight: bold;
+code {
+    background-color: #333;
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: #fff;
 }
