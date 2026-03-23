@@ -1,7 +1,6 @@
 body {
   margin: 0;
-  padding: 0;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui;
   background: #111;
   color: #fff;
 }
@@ -9,12 +8,6 @@ body {
 .container {
   max-width: 800px;
   margin: 60px auto;
-  padding: 20px;
-}
-
-h1 {
-  margin-bottom: 20px;
-  font-weight: 500;
 }
 
 textarea {
@@ -22,17 +15,9 @@ textarea {
   height: 150px;
   font-size: 22px;
   padding: 15px;
-
+  border-radius: 10px;
   border: none;
   outline: none;
-
-  border-radius: 10px;
   background: #222;
   color: #fff;
-
-  resize: none;
-}
-
-textarea::placeholder {
-  color: #777;
 }
