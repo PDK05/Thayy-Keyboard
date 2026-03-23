@@ -20,6 +20,10 @@ const VOWELS = {
 
 const TONES = ["่","้","๊","๋"];
 
+// ===== STATE =====
+let lastGroup = null;
+let lastIndex = -1;
+
 // ===== UTILS =====
 function insert(text){
   let s = ta.selectionStart;
@@ -28,17 +32,25 @@ function insert(text){
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
-function replaceLast(newChar){
+function replaceLast(text){
   let s = ta.selectionStart;
   let v = ta.value;
-  ta.value = v.slice(0,s-1) + newChar + v.slice(s);
+  ta.value = v.slice(0,s-1) + text + v.slice(s);
   ta.selectionStart = ta.selectionEnd = s;
+}
+
+// ===== APPLY CYCLE =====
+function cycle(dir){
+  if(!lastGroup) return;
+
+  lastIndex = (lastIndex + dir + lastGroup.length) % lastGroup.length;
+  replaceLast(lastGroup[lastIndex]);
 }
 
 // ===== MAIN =====
 ta.addEventListener("keydown", (e)=>{
 
-  // ⭐ cho phép phím hệ thống
+  // cho phép phím hệ thống
   if (
     e.ctrlKey || e.metaKey ||
     e.key === "Backspace" ||
@@ -49,54 +61,56 @@ ta.addEventListener("keydown", (e)=>{
   }
 
   let key = e.key.toLowerCase();
-  let pos = ta.selectionStart;
-  let prevChar = ta.value[pos - 1];
 
-  // ===== 1. CONSONANT =====
+  // ===== = forward =====
+  if (key === "=") {
+    e.preventDefault();
+    cycle(+1);
+    return;
+  }
+
+  // ===== - backward =====
+  if (key === "-") {
+    e.preventDefault();
+    cycle(-1);
+    return;
+  }
+
+  // ===== CONSONANT =====
   if (CONS[key]) {
     e.preventDefault();
 
     let group = CONS[key];
-    let idx = group.indexOf(prevChar);
+    insert(group[0]);
 
-    if (idx !== -1) {
-      replaceLast(group[(idx + 1) % group.length]);
-    } else {
-      insert(group[0]);
-    }
+    lastGroup = group;
+    lastIndex = 0;
     return;
   }
 
-  // ===== 2. VOWEL =====
+  // ===== VOWEL =====
   if (VOWELS[key]) {
     e.preventDefault();
 
     let group = VOWELS[key];
-    let idx = group.indexOf(prevChar);
+    insert(group[0]);
 
-    if (idx !== -1) {
-      replaceLast(group[(idx + 1) % group.length]);
-    } else {
-      insert(group[0]); // ⭐ chỉ insert, không ghép
-    }
+    lastGroup = group;
+    lastIndex = 0;
     return;
   }
 
-  // ===== 3. TONE =====
+  // ===== TONE =====
   if (key === "'") {
     e.preventDefault();
 
-    let idx = TONES.indexOf(prevChar);
+    insert(TONES[0]);
 
-    if (idx !== -1) {
-      if (idx === TONES.length - 1) {
-        replaceLast("");
-      } else {
-        replaceLast(TONES[idx + 1]);
-      }
-    } else {
-      insert(TONES[0]);
-    }
+    lastGroup = TONES;
+    lastIndex = 0;
     return;
   }
+
+  // reset nếu gõ ký tự khác
+  lastGroup = null;
 });
