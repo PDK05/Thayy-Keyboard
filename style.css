@@ -1,56 +1,57 @@
-const ta = document.getElementById("input");
-
-const DATA = {
-    // Phụ âm
-    "k": ["ก", "ข", "ฃ", "ค", "ฅ", "ฆ", "ง"],
-    "c": ["จ", "ฉ", "ช", "ซ", "ฌ", "ญ"],
-    "d": ["ฎ", "ฏ", "ฐ", "ฑ", "ฒ", "ณ", "ด", "ต"],
-    "t": ["ถ", "ท", "ธ"],
-    "p": ["บ", "ป", "ผ", "ฝ", "พ", "ฟ", "ภ", "ม"],
-    "y": ["ย", "ร", "ล", "ว"],
-    "s": ["ศ", "ษ", "ส", "ห", "ฬ", "อ", "ฮ"],
-    
-    // Nguyên âm
-    "a": ["ะ", "า", "ำ", "ั"],
-    "i": ["ิ", "ี", "ึ", "ื"],
-    "u": ["ุ", "ู"],
-    "e": ["เ", "แ"],
-    "o": ["โ", "ใ", "ไ"],
-    
-    // Dấu thanh và ký tự đặc biệt
-    "'": ["่", "้", "๊", "๋", "็", "์", "ๆ", "ฯ"]
-};
-
-function insert(text) {
-    const s = ta.selectionStart;
-    const v = ta.value;
-    ta.value = v.slice(0, s) + text + v.slice(s);
-    ta.selectionStart = ta.selectionEnd = s + text.length;
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin: 0;
 }
 
-function replaceLast(newChar) {
-    const s = ta.selectionStart;
-    const v = ta.value;
-    if (s > 0) {
-        ta.value = v.slice(0, s - 1) + newChar + v.slice(s);
-        ta.selectionStart = ta.selectionEnd = s - 1 + newChar.length;
-    }
+/* Ô nhập liệu giống Lexilogos */
+#input {
+    width: 90%;
+    max-width: 1000px;
+    height: 200px;
+    background-color: #444;
+    color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+    font-size: 28px;
+    outline: none;
+    resize: vertical;
+    box-sizing: border-box;
 }
 
-ta.addEventListener("keydown", (e) => {
-    const key = e.key.toLowerCase();
-    const pos = ta.selectionStart;
-    const prevChar = ta.value[pos - 1];
+/* Khu vực nút bấm */
+.toolbar {
+    margin: 10px 0;
+    display: flex;
+    gap: 5px;
+}
 
-    if (DATA[key]) {
-        e.preventDefault();
-        const group = DATA[key];
-        const idx = group.indexOf(prevChar);
+button {
+    background-color: #eee;
+    color: #000;
+    border: 1px solid #999;
+    padding: 5px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 3px;
+}
 
-        if (idx !== -1) {
-            replaceLast(group[(idx + 1) % group.length]);
-        } else {
-            insert(group[0]);
-        }
-    }
-});
+button:hover { background-color: #ccc; }
+
+/* Bảng hướng dẫn ký tự (nhìn cho chuyên nghiệp) */
+.char-map {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    width: 90%;
+    max-width: 1000px;
+    margin-top: 20px;
+    border-top: 1px solid #333;
+    padding-top: 20px;
+}
