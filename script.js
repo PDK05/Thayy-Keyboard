@@ -38,15 +38,12 @@ function replaceLast(newChar){
 // ===== MAIN =====
 ta.addEventListener("keydown", (e)=>{
 
-  // ⭐ cho phép phím tắt & control
+  // ⭐ cho phép phím hệ thống
   if (
     e.ctrlKey || e.metaKey ||
     e.key === "Backspace" ||
     e.key === "Delete" ||
-    e.key === "ArrowLeft" ||
-    e.key === "ArrowRight" ||
-    e.key === "ArrowUp" ||
-    e.key === "ArrowDown"
+    e.key.startsWith("Arrow")
   ) {
     return;
   }
@@ -77,19 +74,22 @@ ta.addEventListener("keydown", (e)=>{
     let group = VOWELS[key];
     let idx = group.indexOf(prevChar);
 
-    // cycle nếu đang là nguyên âm
+    // cycle nguyên âm
     if (idx !== -1) {
       replaceLast(group[(idx + 1) % group.length]);
       return;
     }
 
-    // ===== ghép với phụ âm trước =====
     let cons = ta.value[pos - 1];
-    if (!cons) return;
-
     let vowel = group[0];
 
-    // e/o đứng trước
+    // ⭐ không có phụ âm → gõ độc lập
+    if (!cons || !Object.values(CONS).flat().includes(cons)) {
+      insert(vowel);
+      return;
+    }
+
+    // ⭐ có phụ âm → ghép
     if (key === "e" || key === "o") {
       replaceLast(vowel + cons);
     } else {
@@ -107,7 +107,7 @@ ta.addEventListener("keydown", (e)=>{
 
     if (idx !== -1) {
       if (idx === TONES.length - 1) {
-        replaceLast(""); // xóa nếu quá vòng
+        replaceLast("");
       } else {
         replaceLast(TONES[idx + 1]);
       }
