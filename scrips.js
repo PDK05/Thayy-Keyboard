@@ -8,103 +8,109 @@ const CONSONANT_GROUPS = {
   "P": ["ผ", "พ", "ภ"]
 };
 
-const TONES = {
-  1: "่",
-  2: "้",
-  3: "๊",
-  4: "๋"
-};
+const TONES = ["", "่", "้", "๊", "๋"];
 
-// lấy vị trí con trỏ
-function getCursor() {
-  return textarea.selectionStart;
+// ===== utils =====
+function insertText(text) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+
+  const value = textarea.value;
+
+  textarea.value =
+    value.substring(0, start) +
+    text +
+    value.substring(end);
+
+  textarea.selectionStart = textarea.selectionEnd = start + text.length;
 }
 
-// set lại con trỏ
-function setCursor(pos) {
-  textarea.setSelectionRange(pos, pos);
+function replaceBack(count, newText) {
+  const start = textarea.selectionStart;
+  const value = textarea.value;
+
+  textarea.value =
+    value.substring(0, start - count) +
+    newText +
+    value.substring(start);
+
+  textarea.selectionStart = textarea.selectionEnd =
+    start - count + newText.length;
 }
 
-// thay text tại cursor
-function replaceText(start, end, newText) {
-  let value = textarea.value;
-  textarea.value = value.slice(0, start) + newText + value.slice(end);
-  setCursor(start + newText.length);
-}
+// ===== logic =====
 
-// xử lý phụ âm lặp
-function handleConsonant(char) {
-  let pos = getCursor();
+// cycle consonant
+function handleCycle(key) {
+  let pos = textarea.selectionStart;
   let text = textarea.value;
 
-  // lấy chuỗi phía trước
-  let i = pos - 1;
   let count = 0;
+  let i = pos - 1;
 
-  while (i >= 0 && text[i] === char) {
+  while (i >= 0 && text[i] === key) {
     count++;
     i--;
   }
 
-  let group = CONSONANT_GROUPS[char];
-  if (!group) return;
+  let group = CONSONANT_GROUPS[key];
+  let char = group[count % group.length];
 
-  let newChar = group[count % group.length];
-
-  // thay toàn bộ chuỗi lặp bằng 1 ký tự
-  replaceText(i + 1, pos, newChar);
+  replaceBack(count, char);
 }
 
-// xử lý tone '
+// tone
 function handleTone() {
-  let pos = getCursor();
+  let pos = textarea.selectionStart;
   let text = textarea.value;
 
-  let i = pos - 1;
   let count = 0;
+  let i = pos - 1;
 
   while (i >= 0 && text[i] === "'") {
     count++;
     i--;
   }
 
-  let tone = TONES[count];
-  if (!tone) return;
+  let tone = TONES[count] || "";
 
-  replaceText(i + 1, pos, tone);
+  replaceBack(count, tone);
 }
 
-// xử lý -n
+// final -n
 function handleFinalN() {
-  let pos = getCursor();
+  let pos = textarea.selectionStart;
   let text = textarea.value;
 
-  if (text[pos - 2] === "-" && text[pos - 1] === "n") {
-    replaceText(pos - 2, pos, "น");
+  if (text[pos - 1] === "n" && text[pos - 2] === "-") {
+    replaceBack(2, "น");
   }
 }
 
-// keydown chính
-textarea.addEventListener("input", (e) => {
-  let pos = getCursor();
-  let text = textarea.value;
+// ===== main =====
+textarea.addEventListener("keydown", (e) => {
+  const key = e.key;
 
-  let char = text[pos - 1];
-
-  // phụ âm cycle
-  if (CONSONANT_GROUPS[char]) {
-    handleConsonant(char);
+  // ===== consonant cycle =====
+  if (CONSONANT_GROUPS[key]) {
+    e.preventDefault();
+    insertText(key);
+    handleCycle(key);
     return;
   }
 
-  // tone
-  if (char === "'") {
+  // ===== tone =====
+  if (key === "'") {
+    e.preventDefault();
+    insertText("'");
     handleTone();
     return;
   }
 
-  // final
-  if (char === "n") {
+  // ===== final =====
+  if (key === "n") {
+    e.preventDefault();
+    insertText("n");
     handleFinalN();
     return;
   }
