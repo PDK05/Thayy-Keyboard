@@ -10,12 +10,13 @@ const CONS = {
   n: ["น", "ณ"]
 };
 
+// Cấu trúc lại VOWELS để tách biệt cặp ngắn-dài và các biến thể xoay vòng
 const VOWELS = {
-  a: { variants: ["ะ", "า", "ั"] },
-  i: { variants: ["ิ", "ี", "ึ", "ื"] },
-  u: { variants: ["ุ", "ู"] },
-  e: { variants: ["เ", "แ"] },
-  o: { variants: ["โ", "ใ", "ไ"] }
+  a: { short: "ะ", long: "า", variants: ["ะ", "า", "ั"] },
+  i: { short: "ิ", long: "ี", variants: ["ิ", "ี", "ึ", "ื"] },
+  u: { short: "ุ", long: "ู", variants: ["ุ", "ู"] },
+  e: { short: "เ", long: "แ", variants: ["เ", "แ"] },
+  o: { short: "โ", long: "โ", variants: ["โ", "ใ", "ไ"] }
 };
 
 const TONES = ["่", "้", "๊", "๋"];
@@ -23,6 +24,7 @@ const TONES = ["่", "้", "๊", "๋"];
 // ===== STATE =====
 let lastGroup = null;
 let lastKey = null;
+let isVowelToggle = false;
 
 // ===== UTILS =====
 function insert(text) {
@@ -36,23 +38,16 @@ function replaceLast(text) {
   const s = ta.selectionStart;
   if (s === 0) return;
   const v = ta.value;
-  // Thay thế 1 ký tự ngay trước con trỏ
   ta.value = v.slice(0, s - 1) + text + v.slice(s);
   ta.selectionStart = ta.selectionEnd = s;
 }
 
 function cycle(dir) {
   if (!lastGroup) return;
-
   const pos = ta.selectionStart;
-  const currentChar = ta.value[pos - 1];
-
-  // Tìm vị trí hiện tại của ký tự trong mảng group
-  let idx = lastGroup.indexOf(currentChar);
-  
-  // Nếu không tìm thấy (do con trỏ đã di chuyển hoặc xóa), không làm gì cả
+  const charBefore = ta.value[pos - 1];
+  let idx = lastGroup.indexOf(charBefore);
   if (idx === -1) return;
-
   const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
   replaceLast(lastGroup[newIndex]);
 }
@@ -62,68 +57,56 @@ ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // 1. Phím điều khiển hệ thống (Cho phép mặc định)
   if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
-    // Nếu xóa hoặc di chuyển, reset trạng thái để tránh cycle nhầm
-    if (key !== "ArrowLeft" && key !== "ArrowRight") {
-        lastGroup = null;
-        lastKey = null;
-    }
+    if (!key.startsWith("Arrow")) { lastGroup = null; lastKey = null; }
     return;
   }
 
-  // 2. Xử lý Cycle (+ / = / -)
-  if (key === "=" || key === "+") {
-    e.preventDefault();
-    cycle(1);
-    return;
-  }
-  if (key === "-") {
-    e.preventDefault();
-    cycle(-1);
-    return;
-  }
+  // CYCLE (= / -)
+  if (key === "=" || key === "+") { e.preventDefault(); cycle(1); return; }
+  if (key === "-") { e.preventDefault(); cycle(-1); return; }
 
-  // 3. Xử lý Consonants (Phụ âm)
+  // CONSONANTS
   if (CONS[kLow]) {
     e.preventDefault();
     insert(CONS[kLow][0]);
     lastGroup = CONS[kLow];
     lastKey = kLow;
+    isVowelToggle = false;
     return;
   }
 
-  // 4. Xử lý Vowels (Nguyên âm)
+  // VOWELS (Logic aa -> า | a= -> ั)
   if (VOWELS[kLow]) {
     e.preventDefault();
-    const group = VOWELS[kLow].variants;
-    
-    // Nếu nhấn cùng 1 phím nguyên âm liên tiếp -> Đổi giữa 2 biến thể đầu (Ngắn <-> Dài)
-    if (lastKey === kLow) {
-      const pos = ta.selectionStart;
-      const charBefore = ta.value[pos - 1];
-      let idx = group.indexOf(charBefore);
-      let nextIdx = (idx === 0) ? 1 : 0; // Toggle 0 và 1
-      replaceLast(group[nextIdx]);
+    const vData = VOWELS[kLow];
+
+    if (lastKey === kLow && !isVowelToggle) {
+      // Nhấn lần 2: Thay ะ bằng า
+      replaceLast(vData.long);
+      isVowelToggle = true; 
     } else {
-      insert(group[0]);
+      // Nhấn lần 1 hoặc lần 3: Chèn ะ
+      insert(vData.short);
+      isVowelToggle = false;
     }
 
-    lastGroup = group;
+    lastGroup = vData.variants; // Luôn gán group variants để phím = có thể xoay vòng
     lastKey = kLow;
     return;
   }
 
-  // 5. Xử lý Tones (Dấu) - Dùng phím nháy đơn '
+  // TONES
   if (key === "'") {
     e.preventDefault();
     insert(TONES[0]);
     lastGroup = TONES;
     lastKey = key;
+    isVowelToggle = false;
     return;
   }
 
-  // 6. Reset nếu gõ phím khác (Space, Enter, số...)
   lastGroup = null;
   lastKey = null;
+  isVowelToggle = false;
 });
