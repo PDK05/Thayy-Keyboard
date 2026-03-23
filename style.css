@@ -49,8 +49,7 @@ button:hover {
 
 /* Giấu tiêu đề để trông giống giao diện gõ hơn */
 h2 {
-    font-size: 18px;
-    font-weight: normal;
     margin-bottom: 10px;
-    color: #ffffff;
+    font-weight: normal;
+    font-size: 18px;
 }
