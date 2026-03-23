@@ -10,13 +10,13 @@ const CONS = {
   n: ["น","ณ"]
 };
 
-// ⭐ FIX: biến hình a
+// ⭐ tách rõ short / long / variants
 const VOWELS = {
-  a: ["ะ","ั","า"],
-  i: ["ิ","ี","ึ","ื"],
-  u: ["ุ","ู"],
-  e: ["เ","แ"],
-  o: ["โ","ใ","ไ"]
+  a: { short: "ะ", long: "า", variants: ["ะ","ั","า"] },
+  i: { short: "ิ", long: "ี", variants: ["ิ","ี","ึ","ื"] },
+  u: { short: "ุ", long: "ู", variants: ["ุ","ู"] },
+  e: { short: "เ", long: "แ", variants: ["เ","แ"] },
+  o: { short: "โ", long: null, variants: ["โ","ใ","ไ"] }
 };
 
 const TONES = ["่","้","๊","๋"];
@@ -24,6 +24,7 @@ const TONES = ["่","้","๊","๋"];
 // ===== STATE =====
 let lastGroup = null;
 let lastIndex = -1;
+let lastKey = null;
 
 // ===== UTILS =====
 function insert(text){
@@ -33,14 +34,12 @@ function insert(text){
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
-// ⭐ FIX: xử lý dấu trên/dưới
 function replaceLast(text){
   let s = ta.selectionStart;
   if (s === 0) return;
 
   let v = ta.value;
 
-  // dấu phải "gắn thêm"
   if (["ั","ิ","ี","ึ","ื","ุ","ู"].includes(text)) {
     ta.value = v.slice(0,s) + text + v.slice(s);
     ta.selectionStart = ta.selectionEnd = s + 1;
@@ -51,7 +50,7 @@ function replaceLast(text){
   ta.selectionStart = ta.selectionEnd = s;
 }
 
-// ===== CYCLE =====
+// ===== CYCLE VARIANT =====
 function cycle(dir){
   if(!lastGroup) return;
 
@@ -67,7 +66,7 @@ function cycle(dir){
   lastIndex = newIndex;
 }
 
-// ===== KEYDOWN =====
+// ===== MAIN =====
 ta.addEventListener("keydown", (e)=>{
 
   if (
@@ -83,11 +82,11 @@ ta.addEventListener("keydown", (e)=>{
   if (CONS[key]) {
     e.preventDefault();
 
-    let group = CONS[key];
-    insert(group[0]);
+    insert(CONS[key][0]);
 
-    lastGroup = group;
+    lastGroup = CONS[key];
     lastIndex = 0;
+    lastKey = key;
     return;
   }
 
@@ -95,11 +94,23 @@ ta.addEventListener("keydown", (e)=>{
   if (VOWELS[key]) {
     e.preventDefault();
 
-    let group = VOWELS[key];
-    insert(group[0]);
+    let v = VOWELS[key];
 
-    lastGroup = group;
-    lastIndex = 0;
+    // ⭐ DOUBLE KEY → LONG
+    if (lastKey === key && v.long) {
+      replaceLast(v.long);
+
+      lastGroup = v.variants;
+      lastIndex = v.variants.indexOf(v.long);
+      return;
+    }
+
+    // ⭐ FIRST PRESS → SHORT
+    insert(v.short);
+
+    lastGroup = v.variants;
+    lastIndex = v.variants.indexOf(v.short);
+    lastKey = key;
     return;
   }
 
@@ -111,14 +122,16 @@ ta.addEventListener("keydown", (e)=>{
 
     lastGroup = TONES;
     lastIndex = 0;
+    lastKey = key;
     return;
   }
 
   lastGroup = null;
+  lastKey = null;
 });
 
-// ===== BEFOREINPUT (CHẶN "=") =====
-ta.addEventListener("beforeinput", (e) => {
+// ===== BEFOREINPUT =====
+ta.addEventListener("beforeinput", (e)=>{
 
   if (e.data === "=" || e.data === "+") {
     e.preventDefault();
