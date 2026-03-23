@@ -10,8 +10,9 @@ const CONS = {
   n: ["น","ณ"]
 };
 
+// ⭐ FIX: biến hình a
 const VOWELS = {
-  a: ["ะ","า"],
+  a: ["ะ","ั","า"],
   i: ["ิ","ี","ึ","ื"],
   u: ["ุ","ู"],
   e: ["เ","แ"],
@@ -32,11 +33,20 @@ function insert(text){
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
+// ⭐ FIX: xử lý dấu trên/dưới
 function replaceLast(text){
   let s = ta.selectionStart;
-  if (s === 0) return; // tránh lỗi
+  if (s === 0) return;
 
   let v = ta.value;
+
+  // dấu phải "gắn thêm"
+  if (["ั","ิ","ี","ึ","ื","ุ","ู"].includes(text)) {
+    ta.value = v.slice(0,s) + text + v.slice(s);
+    ta.selectionStart = ta.selectionEnd = s + 1;
+    return;
+  }
+
   ta.value = v.slice(0,s-1) + text + v.slice(s);
   ta.selectionStart = ta.selectionEnd = s;
 }
@@ -45,45 +55,27 @@ function replaceLast(text){
 function cycle(dir){
   if(!lastGroup) return;
 
-  lastIndex = (lastIndex + dir + lastGroup.length) % lastGroup.length;
-  replaceLast(lastGroup[lastIndex]);
+  let pos = ta.selectionStart;
+  let currentChar = ta.value[pos - 1];
+
+  let idx = lastGroup.indexOf(currentChar);
+  if (idx === -1) idx = lastIndex;
+
+  let newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
+
+  replaceLast(lastGroup[newIndex]);
+  lastIndex = newIndex;
 }
 
-// ===== MAIN =====
+// ===== KEYDOWN =====
 ta.addEventListener("keydown", (e)=>{
 
-  // ===== PHÍM HỆ THỐNG =====
   if (
     e.ctrlKey || e.metaKey ||
     e.key === "Backspace" ||
     e.key === "Delete" ||
     e.key.startsWith("Arrow")
-  ) {
-    return;
-  }
-
-  // ===== ⭐ FIX MỌI LOẠI "=" =====
-  if (
-    e.key === "=" ||
-    e.key === "+" ||
-    e.code === "Equal" ||
-    e.code === "NumpadAdd"
-  ) {
-    e.preventDefault();
-    cycle(+1);
-    return;
-  }
-
-  // ===== ⭐ FIX MỌI LOẠI "-" =====
-  if (
-    e.key === "-" ||
-    e.code === "Minus" ||
-    e.code === "NumpadSubtract"
-  ) {
-    e.preventDefault();
-    cycle(-1);
-    return;
-  }
+  ) return;
 
   let key = e.key.toLowerCase();
 
@@ -122,6 +114,19 @@ ta.addEventListener("keydown", (e)=>{
     return;
   }
 
-  // ===== RESET =====
   lastGroup = null;
+});
+
+// ===== BEFOREINPUT (CHẶN "=") =====
+ta.addEventListener("beforeinput", (e) => {
+
+  if (e.data === "=" || e.data === "+") {
+    e.preventDefault();
+    cycle(+1);
+  }
+
+  if (e.data === "-") {
+    e.preventDefault();
+    cycle(-1);
+  }
 });
