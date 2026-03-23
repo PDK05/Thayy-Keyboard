@@ -2,138 +2,89 @@ const ta = document.getElementById("input");
 
 // ===== DATA =====
 const CONS = {
-  "K": ["ข","ฃ","ค","ฅ","ฆ"],
-  "s": ["ซ","ส","ศ","ษ"],
-  "C": ["ฉ","ช","ฌ"],
-  "T": ["ฐ","ฑ","ฒ","ถ","ท","ธ"],
-  "P": ["ผ","พ","ภ"]
+  "k": ["ข", "ฃ", "ค", "ฅ", "ฆ"],
+  "s": ["ซ", "ส", "ศ", "ษ"],
+  "c": ["ฉ", "ช", "ฌ"],
+  "t": ["ฐ", "ฑ", "ฒ", "ถ", "ท", "ธ"],
+  "p": ["ผ", "พ", "ภ"],
+  "n": ["น", "ณ"]
 };
 
 const VOWELS = {
-  "a":  {pos:"after", char:"ะ"},
-  "aa": {pos:"after", char:"า"},
-  "i":  {pos:"above", char:"ิ"},
-  "ii": {pos:"above", char:"ี"},
-  "u":  {pos:"below", char:"ุ"},
-  "uu": {pos:"below", char:"ู"},
-  "e":  {pos:"before",char:"เ"},
-  "ee": {pos:"before",char:"แ"},
-  "o":  {pos:"before",char:"โ"}
+  "a": "ะ",
+  "i": "ิ",
+  "u": "ุ",
+  "e": "เ",
+  "o": "โ"
 };
 
-const TONES = ["","่","้","๊","๋"];
-
-// ===== STATE =====
-let lastConsonantPos = -1;
+const TONES = ["่", "้", "๊", "๋"]; // Dấu thanh
 
 // ===== UTILS =====
-function insert(text){
-  let s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
-  ta.value = v.slice(0,s) + text + v.slice(e);
+function replaceLast(newChar) {
+  let s = ta.selectionStart;
+  let v = ta.value;
+  ta.value = v.slice(0, s - 1) + newChar + v.slice(s);
+  ta.selectionStart = ta.selectionEnd = s;
+}
+
+function insert(text) {
+  let s = ta.selectionStart;
+  let v = ta.value;
+  ta.value = v.slice(0, s) + text + v.slice(s);
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
-function replaceAt(pos,len,text){
-  let v=ta.value;
-  ta.value = v.slice(0,pos) + text + v.slice(pos+len);
-  ta.selectionStart = ta.selectionEnd = pos + text.length;
-}
-
-// ===== CONSONANT =====
-function handleConsonant(key){
+// ===== MAIN EVENT =====
+ta.addEventListener("keydown", (e) => {
+  let key = e.key.toLowerCase();
   let pos = ta.selectionStart;
-  let v = ta.value;
+  let prevChar = ta.value[pos - 1];
 
-  // đếm số lần lặp
-  let i = pos-1, count = 0;
-  while(i>=0 && v[i] === key){ count++; i--; }
-
-  let group = CONS[key];
-  let char = group[count % group.length];
-
-  // thay Latin bằng Thai
-  replaceAt(i+1, count, char);
-
-  lastConsonantPos = i+1;
-}
-
-// ===== VOWEL =====
-function handleVowel(key){
-  if(lastConsonantPos < 0) return;
-
-  let v = VOWELS[key];
-  if(!v) return;
-
-  let cons = ta.value[lastConsonantPos];
-
-  let result;
-
-  if(v.pos === "after") result = cons + v.char;
-  if(v.pos === "before") result = v.char + cons;
-  if(v.pos === "above") result = cons + v.char;
-  if(v.pos === "below") result = cons + v.char;
-
-  replaceAt(lastConsonantPos, 1, result);
-
-  // reset để tránh đè tiếp
-  lastConsonantPos = -1;
-}
-
-// ===== TONE =====
-function handleTone(){
-  let pos = ta.selectionStart;
-  let v = ta.value;
-
-  let i = pos-1, count=0;
-  while(i>=0 && v[i]==="'"){ count++; i--; }
-
-  let tone = TONES[count] || "";
-
-  replaceAt(i+1, count, tone);
-}
-
-// ===== FINAL =====
-function handleFinalN(){
-  let pos = ta.selectionStart;
-  let v = ta.value;
-
-  if(v[pos-2] === "-" && v[pos-1] === "n"){
-    replaceAt(pos-2, 2, "น");
-  }
-}
-
-// ===== MAIN =====
-ta.addEventListener("keydown", e=>{
-  let k = e.key;
-
-  // ===== consonant =====
-  if(CONS[k]){
+  // 1. XỬ LÝ PHỤ ÂM (Consonants) - Gõ liên tiếp để xoay vòng
+  if (CONS[key]) {
     e.preventDefault();
-    insert(k);
-    handleConsonant(k);
+    let group = CONS[key];
+    let idx = group.indexOf(prevChar);
+
+    if (idx !== -1) {
+      // Nếu đã có chữ trong nhóm, xoay vòng
+      replaceLast(group[(idx + 1) % group.length]);
+    } else {
+      // Nếu chưa có, chèn chữ đầu tiên
+      insert(group[0]);
+    }
     return;
   }
 
-  // ===== vowel =====
-  if(["a","i","u","e","o"].includes(k)){
+  // 2. XỬ LÝ NGUYÊN ÂM (Vowels)
+  if (VOWELS[key]) {
     e.preventDefault();
-    handleVowel(k);
+    let vChar = VOWELS[key];
+    
+    // Logic đặc biệt cho 'e' và 'o' (thường đứng trước phụ âm trong tiếng Thái)
+    // Nhưng để đơn giản cho bộ gõ này, ta cứ chèn vào vị trí con trỏ
+    insert(vChar);
     return;
   }
 
-  // ===== tone =====
-  if(k === "'"){
+  // 3. XỬ LÝ DẤU THANH (Tones) - Dùng phím nháy đơn (') để xoay vòng dấu
+  if (key === "'") {
     e.preventDefault();
-    insert("'");
-    handleTone();
-    return;
-  }
-
-  // ===== final =====
-  if(k === "n"){
-    e.preventDefault();
-    insert("n");
-    handleFinalN();
+    let idx = TONES.indexOf(prevChar);
+    
+    if (idx !== -1) {
+      // Xoay vòng qua các dấu: ่ -> ้ -> ๊ -> ๋ -> mất dấu
+      if (idx === TONES.length - 1) {
+        replaceLast(""); // Hết vòng thì xóa dấu
+      } else {
+        replaceLast(TONES[idx + 1]);
+      }
+    } else {
+      insert(TONES[0]); // Chèn dấu đầu tiên
+    }
     return;
   }
 });
+
+console.log("Thai IME Script Ready!");
