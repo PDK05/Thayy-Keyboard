@@ -9,8 +9,6 @@ const CONS = {
   "P": ["ผ","พ","ภ"]
 };
 
-const TONES = ["","่","้","๊","๋"];
-
 const VOWELS = {
   "a":  {pos:"after", char:"ะ"},
   "aa": {pos:"after", char:"า"},
@@ -23,116 +21,119 @@ const VOWELS = {
   "o":  {pos:"before",char:"โ"}
 };
 
-// ===== CORE UTILS =====
-function insert(t){
+const TONES = ["","่","้","๊","๋"];
+
+// ===== STATE =====
+let lastConsonantPos = -1;
+
+// ===== UTILS =====
+function insert(text){
   let s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
-  ta.value=v.slice(0,s)+t+v.slice(e);
-  ta.selectionStart=ta.selectionEnd=s+t.length;
+  ta.value = v.slice(0,s) + text + v.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
-function replaceBack(n,t){
-  let s=ta.selectionStart,v=ta.value;
-  ta.value=v.slice(0,s-n)+t+v.slice(s);
-  ta.selectionStart=ta.selectionEnd=s-n+t.length;
+function replaceAt(pos,len,text){
+  let v=ta.value;
+  ta.value = v.slice(0,pos) + text + v.slice(pos+len);
+  ta.selectionStart = ta.selectionEnd = pos + text.length;
 }
 
-// ===== CONSONANT CYCLE =====
-function cycle(key){
-  let pos=ta.selectionStart,t=ta.value;
-  let i=pos-1,count=0;
+// ===== CONSONANT =====
+function handleConsonant(key){
+  let pos = ta.selectionStart;
+  let v = ta.value;
 
-  while(i>=0 && t[i]===key){count++;i--;}
+  // đếm số lần lặp
+  let i = pos-1, count = 0;
+  while(i>=0 && v[i] === key){ count++; i--; }
 
-  let g=CONS[key];
-  let c=g[count % g.length];
+  let group = CONS[key];
+  let char = group[count % group.length];
 
-  replaceBack(count,c);
-}
+  // thay Latin bằng Thai
+  replaceAt(i+1, count, char);
 
-// ===== TONE =====
-function tone(){
-  let pos=ta.selectionStart,t=ta.value;
-  let i=pos-1,count=0;
-
-  while(i>=0 && t[i]==="'"){count++;i--;}
-
-  let mark=TONES[count]||"";
-  replaceBack(count,mark);
-}
-
-// ===== FINAL =====
-function finalN(){
-  let p=ta.selectionStart,t=ta.value;
-  if(t[p-2]==="-" && t[p-1]==="n"){
-    replaceBack(2,"น");
-  }
+  lastConsonantPos = i+1;
 }
 
 // ===== VOWEL =====
-function vowel(key){
-  let pos=ta.selectionStart,t=ta.value;
+function handleVowel(key){
+  if(lastConsonantPos < 0) return;
 
-  // check double vowel
-  let prev2 = t.slice(pos-2,pos);
-  if(VOWELS[prev2]){
-    replaceBack(2, applyVowel(prev2));
-    return;
-  }
+  let v = VOWELS[key];
+  if(!v) return;
 
-  if(VOWELS[key]){
-    replaceBack(1, applyVowel(key));
-  }
+  let cons = ta.value[lastConsonantPos];
+
+  let result;
+
+  if(v.pos === "after") result = cons + v.char;
+  if(v.pos === "before") result = v.char + cons;
+  if(v.pos === "above") result = cons + v.char;
+  if(v.pos === "below") result = cons + v.char;
+
+  replaceAt(lastConsonantPos, 1, result);
+
+  // reset để tránh đè tiếp
+  lastConsonantPos = -1;
 }
 
-function applyVowel(k){
-  let pos=ta.selectionStart,t=ta.value;
-  let cons=t[pos-2]; // phụ âm trước
+// ===== TONE =====
+function handleTone(){
+  let pos = ta.selectionStart;
+  let v = ta.value;
 
-  if(!cons) return k;
+  let i = pos-1, count=0;
+  while(i>=0 && v[i]==="'"){ count++; i--; }
 
-  let v=VOWELS[k];
+  let tone = TONES[count] || "";
 
-  if(v.pos==="after") return cons+v.char;
-  if(v.pos==="before") return v.char+cons;
-  if(v.pos==="above") return cons+v.char;
-  if(v.pos==="below") return cons+v.char;
+  replaceAt(i+1, count, tone);
+}
 
-  return k;
+// ===== FINAL =====
+function handleFinalN(){
+  let pos = ta.selectionStart;
+  let v = ta.value;
+
+  if(v[pos-2] === "-" && v[pos-1] === "n"){
+    replaceAt(pos-2, 2, "น");
+  }
 }
 
 // ===== MAIN =====
 ta.addEventListener("keydown", e=>{
-  let k=e.key;
+  let k = e.key;
 
-  // consonant
+  // ===== consonant =====
   if(CONS[k]){
     e.preventDefault();
     insert(k);
-    cycle(k);
+    handleConsonant(k);
     return;
   }
 
-  // tone
-  if(k==="'"){
+  // ===== vowel =====
+  if(["a","i","u","e","o"].includes(k)){
+    e.preventDefault();
+    handleVowel(k);
+    return;
+  }
+
+  // ===== tone =====
+  if(k === "'"){
     e.preventDefault();
     insert("'");
-    tone();
+    handleTone();
     return;
   }
 
-  // final
-  if(k==="n"){
+  // ===== final =====
+  if(k === "n"){
     e.preventDefault();
     insert("n");
-    finalN();
-    return;
-  }
-
-  // vowel
-  if("aeiou".includes(k)){
-    e.preventDefault();
-    insert(k);
-    vowel(k);
+    handleFinalN();
     return;
   }
 });
