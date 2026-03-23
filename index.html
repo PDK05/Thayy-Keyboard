@@ -1,18 +1,17 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Thai Keyboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
-    <h2>Thai Keyboard Online</h2>
-    
-    <textarea id="input" placeholder="Gõ trực tiếp bằng bàn phím (k, a, i, u, t...)"></textarea>
+    <textarea id="input" autofocus></textarea>
 
     <div class="toolbar">
-        <button onclick="copyText()">Copy</button>
-        <button onclick="clearText()">Clear</button>
-        <button id="modeBtn">Light Mode</button>
-    </div>
-
-    <div class="char-map">
-        <div><strong>Consonants:</strong> k, s, c, t, p, n...</div>
-        <div><strong>Vowels:</strong> a, i, u, e, o...</div>
-        <div><strong>Tones:</strong> Phím ' để xoay vòng</div>
+        <button onclick="copyText()">copy</button>
+        <button onclick="saveText()">save</button>
+        <button onclick="clearText()">clear</button>
     </div>
 
     <script src="script.js"></script>
@@ -21,10 +20,18 @@
             const ta = document.getElementById("input");
             ta.select();
             document.execCommand("copy");
-            alert("Đã copy văn bản!");
         }
         function clearText() {
-            document.getElementById("input").value = "";
+            if(confirm("Xóa hết?")) document.getElementById("input").value = "";
+        }
+        function saveText() {
+            const text = document.getElementById("input").value;
+            const blob = new Blob([text], {type: "text/plain"});
+            const anchor = document.createElement("a");
+            anchor.download = "thai_text.txt";
+            anchor.href = window.URL.createObjectURL(blob);
+            anchor.click();
         }
     </script>
 </body>
+</html>
