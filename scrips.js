@@ -1,117 +1,138 @@
-const textarea = document.getElementById("input");
+const ta = document.getElementById("input");
 
-const CONSONANT_GROUPS = {
-  "K": ["ข", "ฃ", "ค", "ฅ", "ฆ"],
-  "s": ["ซ", "ส", "ศ", "ษ"],
-  "C": ["ฉ", "ช", "ฌ"],
-  "T": ["ฐ", "ฑ", "ฒ", "ถ", "ท", "ธ"],
-  "P": ["ผ", "พ", "ภ"]
+// ===== DATA =====
+const CONS = {
+  "K": ["ข","ฃ","ค","ฅ","ฆ"],
+  "s": ["ซ","ส","ศ","ษ"],
+  "C": ["ฉ","ช","ฌ"],
+  "T": ["ฐ","ฑ","ฒ","ถ","ท","ธ"],
+  "P": ["ผ","พ","ภ"]
 };
 
-const TONES = ["", "่", "้", "๊", "๋"];
+const TONES = ["","่","้","๊","๋"];
 
-// ===== utils =====
-function insertText(text) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
+const VOWELS = {
+  "a":  {pos:"after", char:"ะ"},
+  "aa": {pos:"after", char:"า"},
+  "i":  {pos:"above", char:"ิ"},
+  "ii": {pos:"above", char:"ี"},
+  "u":  {pos:"below", char:"ุ"},
+  "uu": {pos:"below", char:"ู"},
+  "e":  {pos:"before",char:"เ"},
+  "ee": {pos:"before",char:"แ"},
+  "o":  {pos:"before",char:"โ"}
+};
 
-  const value = textarea.value;
-
-  textarea.value =
-    value.substring(0, start) +
-    text +
-    value.substring(end);
-
-  textarea.selectionStart = textarea.selectionEnd = start + text.length;
+// ===== CORE UTILS =====
+function insert(t){
+  let s=ta.selectionStart,e=ta.selectionEnd,v=ta.value;
+  ta.value=v.slice(0,s)+t+v.slice(e);
+  ta.selectionStart=ta.selectionEnd=s+t.length;
 }
 
-function replaceBack(count, newText) {
-  const start = textarea.selectionStart;
-  const value = textarea.value;
-
-  textarea.value =
-    value.substring(0, start - count) +
-    newText +
-    value.substring(start);
-
-  textarea.selectionStart = textarea.selectionEnd =
-    start - count + newText.length;
+function replaceBack(n,t){
+  let s=ta.selectionStart,v=ta.value;
+  ta.value=v.slice(0,s-n)+t+v.slice(s);
+  ta.selectionStart=ta.selectionEnd=s-n+t.length;
 }
 
-// ===== logic =====
+// ===== CONSONANT CYCLE =====
+function cycle(key){
+  let pos=ta.selectionStart,t=ta.value;
+  let i=pos-1,count=0;
 
-// cycle consonant
-function handleCycle(key) {
-  let pos = textarea.selectionStart;
-  let text = textarea.value;
+  while(i>=0 && t[i]===key){count++;i--;}
 
-  let count = 0;
-  let i = pos - 1;
+  let g=CONS[key];
+  let c=g[count % g.length];
 
-  while (i >= 0 && text[i] === key) {
-    count++;
-    i--;
-  }
-
-  let group = CONSONANT_GROUPS[key];
-  let char = group[count % group.length];
-
-  replaceBack(count, char);
+  replaceBack(count,c);
 }
 
-// tone
-function handleTone() {
-  let pos = textarea.selectionStart;
-  let text = textarea.value;
+// ===== TONE =====
+function tone(){
+  let pos=ta.selectionStart,t=ta.value;
+  let i=pos-1,count=0;
 
-  let count = 0;
-  let i = pos - 1;
+  while(i>=0 && t[i]==="'"){count++;i--;}
 
-  while (i >= 0 && text[i] === "'") {
-    count++;
-    i--;
-  }
-
-  let tone = TONES[count] || "";
-
-  replaceBack(count, tone);
+  let mark=TONES[count]||"";
+  replaceBack(count,mark);
 }
 
-// final -n
-function handleFinalN() {
-  let pos = textarea.selectionStart;
-  let text = textarea.value;
-
-  if (text[pos - 1] === "n" && text[pos - 2] === "-") {
-    replaceBack(2, "น");
+// ===== FINAL =====
+function finalN(){
+  let p=ta.selectionStart,t=ta.value;
+  if(t[p-2]==="-" && t[p-1]==="n"){
+    replaceBack(2,"น");
   }
 }
 
-// ===== main =====
-textarea.addEventListener("keydown", (e) => {
-  const key = e.key;
+// ===== VOWEL =====
+function vowel(key){
+  let pos=ta.selectionStart,t=ta.value;
 
-  // ===== consonant cycle =====
-  if (CONSONANT_GROUPS[key]) {
-    e.preventDefault();
-    insertText(key);
-    handleCycle(key);
+  // check double vowel
+  let prev2 = t.slice(pos-2,pos);
+  if(VOWELS[prev2]){
+    replaceBack(2, applyVowel(prev2));
     return;
   }
 
-  // ===== tone =====
-  if (key === "'") {
+  if(VOWELS[key]){
+    replaceBack(1, applyVowel(key));
+  }
+}
+
+function applyVowel(k){
+  let pos=ta.selectionStart,t=ta.value;
+  let cons=t[pos-2]; // phụ âm trước
+
+  if(!cons) return k;
+
+  let v=VOWELS[k];
+
+  if(v.pos==="after") return cons+v.char;
+  if(v.pos==="before") return v.char+cons;
+  if(v.pos==="above") return cons+v.char;
+  if(v.pos==="below") return cons+v.char;
+
+  return k;
+}
+
+// ===== MAIN =====
+ta.addEventListener("keydown", e=>{
+  let k=e.key;
+
+  // consonant
+  if(CONS[k]){
     e.preventDefault();
-    insertText("'");
-    handleTone();
+    insert(k);
+    cycle(k);
     return;
   }
 
-  // ===== final =====
-  if (key === "n") {
+  // tone
+  if(k==="'"){
     e.preventDefault();
-    insertText("n");
-    handleFinalN();
+    insert("'");
+    tone();
+    return;
+  }
+
+  // final
+  if(k==="n"){
+    e.preventDefault();
+    insert("n");
+    finalN();
+    return;
+  }
+
+  // vowel
+  if("aeiou".includes(k)){
+    e.preventDefault();
+    insert(k);
+    vowel(k);
     return;
   }
 });
