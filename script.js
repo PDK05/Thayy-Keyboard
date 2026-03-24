@@ -3,6 +3,7 @@ const ta = document.getElementById("input");
 // ===== DATA =====
 const CONS = {
   k: ["ก", "ข", "ฃ", "ค", "ฅ", "ฆ"],
+  K: ["ฆ", "ค", "ฅ", "ข", "ฃ"],
   g: ["ง"],
   c: ["ฉ", "ช", "ฌ"],
   s: ["ซ", "ส", "ศ", "ษ"],
@@ -83,12 +84,13 @@ ta.addEventListener("keydown", (e) => {
   if (key === "=" || key === "+") { e.preventDefault(); cycle(1); return; }
   if (key === "-") { e.preventDefault(); cycle(-1); return; }
 
-  // 3. CONSONANTS (Phụ âm)
-  if (CONS[kLow]) {
+  // 3. CONSONANTS (Phân biệt k và K)
+  if (CONS[key]) { // Dùng 'key' thay vì 'kLow' để phân biệt hoa/thường
     e.preventDefault();
-    insert(CONS[kLow][0]);
-    lastGroup = CONS[kLow];
-    lastKey = kLow;
+    
+    insert(CONS[key][0]); // Chèn chữ đầu tiên của mảng tương ứng
+    lastGroup = CONS[key]; // Gán nhóm (Nếu gõ 'k' thì group chỉ có ["ก"])
+    lastKey = key;         // Lưu lại key chính xác (k hoặc K)
     isAltered = false;
     return;
   }
