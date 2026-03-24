@@ -12,10 +12,10 @@ const CONS = {
 
 const VOWELS = {
   a: { short: "ะ", long: "า", variants: ["ะ", "ั"] },
-  i: { short: "ิ", long: "ี", variants: ["ิ", "ี"] },
-  u: { short: "ุ", long: "ู", variants: ["ุ", "ู"] },
-  e: { short: "เ", long: "แ", variants: ["เ", "แ"] },
-  o: { short: "โ", long: null, variants: ["โ"] }
+  i: { short: "ิ", long: "ี", variants: null },
+  u: { short: "ุ", long: "ู", variants: null ] },
+  e: { short: "เ", long: "แ", variants: null ] },
+  o: { short: "โ", long: null, variants: ["โ", "ไ", "ใ"] ] }
 };
 
 const TONES = ["่", "้", "๊", "๋"];
