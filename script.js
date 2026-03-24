@@ -23,13 +23,14 @@ const TONES = ["่", "้", "๊", "๋"];
 // ===== STATE =====
 let lastGroup = null;
 let lastKey = null;
-let isVowelToggle = false;
+let isLongVowel = false; // Trạng thái kiểm soát dạng dài/ngắn
 
 // ===== UTILS =====
 function insert(text) {
   const s = ta.selectionStart;
+  const e = ta.selectionEnd;
   const v = ta.value;
-  ta.value = v.slice(0, s) + text + v.slice(s);
+  ta.value = v.slice(0, s) + text + v.slice(e);
   ta.selectionStart = ta.selectionEnd = s + text.length;
 }
 
@@ -50,22 +51,26 @@ function cycle(dir) {
   
   const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
   replaceLast(lastGroup[newIndex]);
-  
-  // Reset toggle để phím nguyên âm tiếp theo insert mới
-  isVowelToggle = false; 
 }
+
+// Reset trạng thái khi người dùng click chuột thay đổi vị trí con trỏ
+ta.addEventListener("mousedown", () => {
+  lastGroup = null;
+  lastKey = null;
+  isLongVowel = false;
+});
 
 // ===== EVENT LISTENER =====
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // 1. Phím hệ thống
+  // 1. Phím hệ thống & Di chuyển
   if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
     if (!key.startsWith("Arrow")) { 
         lastGroup = null; 
         lastKey = null; 
-        isVowelToggle = false;
+        isLongVowel = false;
     }
     return;
   }
@@ -88,44 +93,45 @@ ta.addEventListener("keydown", (e) => {
     insert(CONS[kLow][0]);
     lastGroup = CONS[kLow];
     lastKey = kLow;
-    isVowelToggle = false;
+    isLongVowel = false;
     return;
   }
 
-  // 4. VOWELS (short → long)
+  // 4. VOWELS (Logic: Short -> Long -> Lock)
   if (VOWELS[kLow]) {
     e.preventDefault();
     const vData = VOWELS[kLow];
 
-    if (lastKey === kLow && !isVowelToggle && vData.long) {
-      // Toggle lần 2: short → long
+    // Nếu gõ lại phím đó và đang ở dạng ngắn (short)
+    if (lastKey === kLow && !isLongVowel && vData.long) {
       replaceLast(vData.long);
-      isVowelToggle = true; 
+      isLongVowel = true; // Đánh dấu đã sang dạng dài
+      lastGroup = null;   // Dạng dài không có biến thể -> Xóa group để không cycle được
     } else {
-      // Lần 1 hoặc long không có → insert short
+      // Nhấn lần đầu hoặc nhấn sau khi đã gõ phím khác
       insert(vData.short);
-      isVowelToggle = false;
+      isLongVowel = false;
+      lastGroup = vData.variants; // Cho phép cycle biến thể khi còn ở dạng ngắn
     }
 
-    lastGroup = vData.variants; 
     lastKey = kLow;
     return;
   }
 
-  // 5. TONES (nhấn ' → dấu thanh)
+  // 5. TONES (nhấn ' -> dấu thanh)
   if (key === "'") {
     e.preventDefault();
     insert(TONES[0]);
     lastGroup = TONES;
     lastKey = key;
-    isVowelToggle = false;
+    isLongVowel = false;
     return;
   }
 
-  // Reset cho các phím khác
+  // Reset cho các phím gõ text thông thường khác (Space, số, ...)
   if (key !== "Shift") {
     lastGroup = null;
     lastKey = null;
-    isVowelToggle = false;
+    isLongVowel = false;
   }
 });
