@@ -11,11 +11,14 @@ const CONS = {
 };
 
 const VOWELS = {
-  a: { short: "ะ", long: "า", variants: ["ะ", "ั"] },
-  i: { short: "ิ", long: "ี", variants: null },
-  u: { short: "ุ", long: "ู", variants: null },
-  e: { short: "เ", long: "แ", variants: null },
-  o: { short: null, long: "โ", variants: ["โ", "ไ", "ใ"] }
+  // default: Ký tự hiện ra đầu tiên
+  // alt: Ký tự thay thế khi nhấn đúp (nếu có)
+  // variants: Nhóm ký tự để xoay vòng bằng = / -
+  a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
+  i: { default: "ิ", alt: "ี", variants: null },
+  u: { default: "ุ", alt: "ู", variants: null },
+  e: { default: "เ", alt: "แ", variants: null },
+  o: { default: "โ", alt: null, variants: ["โ", "ไ", "ใ"] } 
 };
 
 const TONES = ["่", "้", "๊", "๋"];
@@ -23,7 +26,7 @@ const TONES = ["่", "้", "๊", "๋"];
 // ===== STATE =====
 let lastGroup = null;
 let lastKey = null;
-let isLongVowel = false; // Trạng thái kiểm soát dạng dài/ngắn
+let isAltered = false; // Thay cho isLongVowel: Đánh dấu đã chuyển sang ký tự phụ (alt)
 
 // ===== UTILS =====
 function insert(text) {
@@ -53,11 +56,10 @@ function cycle(dir) {
   replaceLast(lastGroup[newIndex]);
 }
 
-// Reset trạng thái khi người dùng click chuột thay đổi vị trí con trỏ
 ta.addEventListener("mousedown", () => {
   lastGroup = null;
   lastKey = null;
-  isLongVowel = false;
+  isAltered = false;
 });
 
 // ===== EVENT LISTENER =====
@@ -65,27 +67,17 @@ ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // 1. Phím hệ thống & Di chuyển
+  // 1. Phím hệ thống
   if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
     if (!key.startsWith("Arrow")) { 
-        lastGroup = null; 
-        lastKey = null; 
-        isLongVowel = false;
+        lastGroup = null; lastKey = null; isAltered = false;
     }
     return;
   }
 
   // 2. CYCLE (= / -)
-  if (key === "=" || key === "+") { 
-    e.preventDefault(); 
-    cycle(1); 
-    return; 
-  }
-  if (key === "-") { 
-    e.preventDefault(); 
-    cycle(-1); 
-    return; 
-  }
+  if (key === "=" || key === "+") { e.preventDefault(); cycle(1); return; }
+  if (key === "-") { e.preventDefault(); cycle(-1); return; }
 
   // 3. CONSONANTS
   if (CONS[kLow]) {
@@ -93,45 +85,42 @@ ta.addEventListener("keydown", (e) => {
     insert(CONS[kLow][0]);
     lastGroup = CONS[kLow];
     lastKey = kLow;
-    isLongVowel = false;
+    isAltered = false;
     return;
   }
 
-  // 4. VOWELS (Logic: Short -> Long -> Lock)
+  // 4. VOWELS (Logic cập nhật theo tên gọi mới)
   if (VOWELS[kLow]) {
     e.preventDefault();
     const vData = VOWELS[kLow];
 
-    // Nếu gõ lại phím đó và đang ở dạng ngắn (short)
-    if (lastKey === kLow && !isLongVowel && vData.long) {
-      replaceLast(vData.long);
-      isLongVowel = true; // Đánh dấu đã sang dạng dài
-      lastGroup = null;   // Dạng dài không có biến thể -> Xóa group để không cycle được
+    // Kiểm tra nhấn đúp để biến hình sang ký tự phụ (alt)
+    if (lastKey === kLow && !isAltered && vData.alt) {
+      replaceLast(vData.alt);
+      isAltered = true; 
+      lastGroup = null; // Khóa cycle khi đã ở trạng thái biến hình
     } else {
-      // Nhấn lần đầu hoặc nhấn sau khi đã gõ phím khác
-      insert(vData.short);
-      isLongVowel = false;
-      lastGroup = vData.variants; // Cho phép cycle biến thể khi còn ở dạng ngắn
+      // Nhấn lần đầu: Ra ký tự mặc định (โ, ะ, ิ...)
+      insert(vData.default);
+      isAltered = false;
+      lastGroup = vData.variants; // Cho phép xoay vòng các biến thể ngay lập tức
     }
 
     lastKey = kLow;
     return;
   }
 
-  // 5. TONES (nhấn ' -> dấu thanh)
+  // 5. TONES
   if (key === "'") {
     e.preventDefault();
     insert(TONES[0]);
     lastGroup = TONES;
     lastKey = key;
-    isLongVowel = false;
+    isAltered = false;
     return;
   }
 
-  // Reset cho các phím gõ text thông thường khác (Space, số, ...)
   if (key !== "Shift") {
-    lastGroup = null;
-    lastKey = null;
-    isLongVowel = false;
+    lastGroup = null; lastKey = null; isAltered = false;
   }
 });
