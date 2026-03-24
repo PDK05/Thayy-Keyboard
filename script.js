@@ -15,7 +15,7 @@ const VOWELS = {
   i: { short: "ิ", long: "ี", variants: null },
   u: { short: "ุ", long: "ู", variants: null ] },
   e: { short: "เ", long: "แ", variants: null ] },
-  o: { short: "โ", long: null, variants: ["โ", "ไ", "ใ"] ] }
+  o: { short: "โ", long: null, variants: ["โ", "ไ", "ใ"] }
 };
 
 const TONES = ["่", "้", "๊", "๋"];
