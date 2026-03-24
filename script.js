@@ -12,10 +12,10 @@ const CONS = {
 
 const VOWELS = {
   a: { short: "ะ", long: "า", variants: ["ะ", "ั"] },
-  i: { short: "ิ", long: "ี", variants: ["ิ", "ี", "ึ", "ื"] },
+  i: { short: "ิ", long: "ี", variants: ["ิ", "ี"] },
   u: { short: "ุ", long: "ู", variants: ["ุ", "ู"] },
   e: { short: "เ", long: "แ", variants: ["เ", "แ"] },
-  o: { short: "โ", long: "โ", variants: ["โ", "ใ", "ไ"] }
+  o: { short: "โ", long: null, variants: ["โ"] }
 };
 
 const TONES = ["่", "้", "๊", "๋"];
@@ -51,7 +51,7 @@ function cycle(dir) {
   const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
   replaceLast(lastGroup[newIndex]);
   
-  // Quan trọng: Khi nhấn cycle, reset toggle để phím nguyên âm tiếp theo là insert mới
+  // Reset toggle để phím nguyên âm tiếp theo insert mới
   isVowelToggle = false; 
 }
 
@@ -92,17 +92,17 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // 4. VOWELS (aa -> า | a= -> ั)
+  // 4. VOWELS (short → long)
   if (VOWELS[kLow]) {
     e.preventDefault();
     const vData = VOWELS[kLow];
 
-    if (lastKey === kLow && !isVowelToggle) {
-      // Lần 2: Thay short bằng long (ะ -> า)
+    if (lastKey === kLow && !isVowelToggle && vData.long) {
+      // Toggle lần 2: short → long
       replaceLast(vData.long);
       isVowelToggle = true; 
     } else {
-      // Lần 1 hoặc lần 3: Insert short (ะ)
+      // Lần 1 hoặc long không có → insert short
       insert(vData.short);
       isVowelToggle = false;
     }
@@ -112,7 +112,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // 5. TONES
+  // 5. TONES (nhấn ' → dấu thanh)
   if (key === "'") {
     e.preventDefault();
     insert(TONES[0]);
