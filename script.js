@@ -1,6 +1,6 @@
 const ta = document.getElementById("input");
 
-// ===== 1. DATA (Dữ liệu) =====
+// ===== DATA =====
 const CONS = {
   k: ["ข", "ฃ", "ค", "ฅ", "ฆ"],
   s: ["ซ", "ส", "ศ", "ษ"],
@@ -11,9 +11,9 @@ const CONS = {
 };
 
 const VOWELS = {
-  // default: Ký tự hiện ra đầu tiên
-  // alt: Ký tự thay thế khi nhấn đúp (nếu không có thì để null)
-  // variants: Danh sách xoay vòng bằng =/- (nếu không có thì để null)
+  // default: Hiện ra khi gõ 1 lần
+  // alt: Hiện ra khi gõ 2 lần (nếu không có thì để null)
+  // variants: Các chữ cùng nhóm để xoay bằng phím =/-
   a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
   i: { default: "ิ", alt: "ี", variants: null },
   u: { default: "ุ", alt: "ู", variants: null },
@@ -23,14 +23,14 @@ const VOWELS = {
 
 const TONES = ["่", "้", "๊", "๋"];
 
-// ===== 2. STATE (Trạng thái) =====
+// ===== STATE (Trạng thái) =====
 let lastGroup = null;
 let lastKey = null;
 let isAltered = false; 
 
-// ===== 3. UTILS (Hàm hỗ trợ) =====
+// ===== UTILS (Hàm hỗ trợ) =====
 function insert(text) {
-  if (!text) return; // Chặn chữ "null" hiện lên màn hình
+  if (!text) return; // Chống chèn giá trị rỗng hoặc null
   const s = ta.selectionStart;
   const e = ta.selectionEnd;
   const v = ta.value;
@@ -39,7 +39,7 @@ function insert(text) {
 }
 
 function replaceLast(text) {
-  if (!text) return; // Chặn chữ "null" hiện lên màn hình
+  if (!text) return;
   const s = ta.selectionStart;
   if (s === 0) return;
   const v = ta.value;
@@ -48,9 +48,7 @@ function replaceLast(text) {
 }
 
 function cycle(dir) {
-  // Nếu lastGroup là null hoặc không có phần tử, thoát ngay để tránh lỗi
   if (!lastGroup || lastGroup.length === 0) return;
-  
   const pos = ta.selectionStart;
   const charBefore = ta.value[pos - 1];
   let idx = lastGroup.indexOf(charBefore);
@@ -60,16 +58,19 @@ function cycle(dir) {
   replaceLast(lastGroup[newIndex]);
 }
 
+// Reset khi click chuột
 ta.addEventListener("mousedown", () => {
-  lastGroup = null; lastKey = null; isAltered = false;
+  lastGroup = null;
+  lastKey = null;
+  isAltered = false;
 });
 
-// ===== 4. MAIN EVENT (Xử lý gõ phím) =====
+// ===== EVENT LISTENER (Xử lý gõ phím) =====
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // A. Phím hệ thống
+  // 1. Phím hệ thống & Di chuyển
   if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
     if (!key.startsWith("Arrow")) { 
         lastGroup = null; lastKey = null; isAltered = false;
@@ -77,11 +78,11 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // B. Phím Cycle (= / -)
+  // 2. CYCLE (Phím = và -)
   if (key === "=" || key === "+") { e.preventDefault(); cycle(1); return; }
   if (key === "-") { e.preventDefault(); cycle(-1); return; }
 
-  // C. Phụ âm
+  // 3. CONSONANTS (Phụ âm)
   if (CONS[kLow]) {
     e.preventDefault();
     insert(CONS[kLow][0]);
@@ -91,22 +92,21 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // D. Nguyên âm (Vowels) - Đã xử lý triệt để variants: null
+  // 4. VOWELS (Nguyên âm - Đã fix lỗi phím o)
   if (VOWELS[kLow]) {
     e.preventDefault();
     const vData = VOWELS[kLow];
 
-    // Nhấn đúp: Đổi sang alt (nếu alt khác null)
+    // Nhấn đúp để biến hình (Chỉ chạy nếu có alt và alt không phải null)
     if (lastKey === kLow && !isAltered && vData.alt !== null) {
       replaceLast(vData.alt);
       isAltered = true; 
       lastGroup = null; 
     } 
-    // Nhấn lần đầu HOẶC phím không hỗ trợ alt (như phím o)
+    // Nhấn lần đầu hoặc phím không có alt (như phím o)
     else {
       insert(vData.default);
       isAltered = false;
-      // Nếu variants là null, gán mảng rỗng [] để hàm cycle không bị lỗi
       lastGroup = vData.variants || []; 
     }
 
@@ -114,7 +114,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // E. Dấu thanh
+  // 5. TONES (Dấu thanh bằng phím ')
   if (key === "'") {
     e.preventDefault();
     insert(TONES[0]);
@@ -124,6 +124,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
+  // Reset cho các phím khác
   if (key !== "Shift") {
     lastGroup = null; lastKey = null; isAltered = false;
   }
