@@ -11,7 +11,7 @@ const CONS = {
 };
 
 const VOWELS = {
-  a: { short: "ะ", long: "า", variants: ["ะ", "ั"] },
+  a: { short: "ะ", long: "า", variants: ["ั"] },
   i: { short: "ิ", long: "ี", variants: ["ิ", "ี", "ึ", "ื"] },
   u: { short: "ุ", long: "ู", variants: ["ุ", "ู"] },
   e: { short: "เ", long: "แ", variants: ["เ", "แ"] },
