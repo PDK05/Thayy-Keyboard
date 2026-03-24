@@ -13,8 +13,8 @@ const CONS = {
 const VOWELS = {
   a: { short: "ะ", long: "า", variants: ["ะ", "ั"] },
   i: { short: "ิ", long: "ี", variants: null },
-  u: { short: "ุ", long: "ู", variants: null ] },
-  e: { short: "เ", long: "แ", variants: null ] },
+  u: { short: "ุ", long: "ู", variants: null },
+  e: { short: "เ", long: "แ", variants: null },
   o: { short: "โ", long: null, variants: ["โ", "ไ", "ใ"] }
 };
 
