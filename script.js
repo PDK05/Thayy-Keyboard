@@ -15,9 +15,9 @@ const VOWELS = {
   // alt: Hiện ra khi gõ 2 lần (nếu không có thì để null)
   // variants: Các chữ cùng nhóm để xoay bằng phím =/-
   a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
-  i: { default: "ิ", alt: "ี", variants: ["ิ", "ี"] },
-  u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
-  e: { default: "เ", alt: "แ", variants: ["เ", "แ"] },
+  i: { default: "ิ", alt: "ี", variants: null },
+  u: { default: "ุ", alt: "ู", variants: null },
+  e: { default: "เ", alt: "แ", variants: null },
   o: { default: "โ", alt: null, variants: ["โ", "ไ", "ใ"] } 
 };
 
