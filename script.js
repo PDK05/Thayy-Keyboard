@@ -1,12 +1,12 @@
 const ta = document.getElementById("input");
 
 // ==========================================
-// 1. CONFIG
+// 1. CONFIG: Giữ nguyên các định nghĩa của bạn
 // ==========================================
 const CONFIG = {
   consonants: {
-    k: ["ก", "ค", ["ค","ข", "ฆ", "ฅ", "ฃ"]], // Nhấn Shift+k ra ค, nhấn + tiếp ra ฆ
     t: ["ต", "ฏ", ["ต", "ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ", "ฏ"]],
+    k: ["ก", "ค", ["ก", "ข", "ค", "ฆ", "ฃ", "ฅ"]],
     d: ["ด", "ฎ", ["ด", "ฎ"]],
     p: ["ป", "พ", ["ป", "ผ", "พ", "ภ", "ฝ", "ฟ"]],
     s: ["ซ", "ส", ["ซ", "ส", "ศ", "ษ"]],
@@ -35,7 +35,6 @@ const CONFIG = {
 let lastKey = null;
 let currentGroup = null;
 
-// --- Hàm chèn văn bản ---
 function updateText(newChar, isReplace = false) {
   const pos = ta.selectionStart;
   const val = ta.value;
@@ -48,7 +47,6 @@ function updateText(newChar, isReplace = false) {
   }
 }
 
-// --- Hàm xoay vòng ---
 function handleCycle(dir) {
   if (!currentGroup || currentGroup.length <= 1) return;
   const charBefore = ta.value[ta.selectionStart - 1];
@@ -61,45 +59,44 @@ function handleCycle(dir) {
 }
 
 // ==========================================
-// 3. EVENT LISTENER
+// 2. EVENT LISTENER: Xử lý ưu tiên tuyệt đối
 // ==========================================
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // Chặn phím hệ thống
-  if (e.ctrlKey || e.metaKey || ["Backspace", "Enter", "Tab"].includes(key)) return;
-
-  // --- LOGIC XOAY VÒNG (TIẾN) ---
-  // Gộp cả phím '+' và '=' vào làm một lệnh Tiến
+  // A. CHẶN PHÍM CỘNG VÀ TRỪ TRƯỚC TIÊN (Ưu tiên tuyệt đối)
+  // Bất kể phím đó đến từ đâu (Numpad hay phím chính), miễn là dấu "+" hoặc "=" hoặc "-"
   if (key === "+" || key === "=") { 
     e.preventDefault();
     handleCycle(1);
-    return;
+    return; // Thoát ngay lập tức, không chạy xuống dưới
   }
-
-  // --- LOGIC XOAY VÒNG (LÙI) ---
   if (key === "-") {
     e.preventDefault();
     handleCycle(-1);
-    return;
+    return; // Thoát ngay lập tức
   }
 
-  // --- XỬ LÝ PHỤ ÂM ---
+  // Chặn phím hệ thống
+  if (e.ctrlKey || e.metaKey || ["Backspace", "Enter", "Tab"].includes(key)) return;
+
+  // B. XỬ LÝ PHỤ ÂM
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
     
-    // Nếu nhấn Shift thì lấy ký tự Shift, không thì lấy mặc định
-    const charToInsert = (e.shiftKey) ? shiftDef : def;
+    // Gõ k thường ra ก, gõ K (Shift) ra ค
+    // Dùng key !== kLow để bắt chính xác trạng thái Shift của chữ cái
+    const charToInsert = (key !== kLow) ? shiftDef : def;
     
     updateText(charToInsert);
-    currentGroup = cycleGroup; // Lưu nhóm để nhấn + còn biết đường mà xoay
+    currentGroup = cycleGroup; 
     lastKey = kLow;
     return;
   }
 
-  // --- XỬ LÝ NGUYÊN ÂM ---
+  // C. XỬ LÝ NGUYÊN ÂM
   if (CONFIG.vowels[kLow]) {
     e.preventDefault();
     const v = CONFIG.vowels[kLow];
@@ -114,7 +111,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // --- XỬ LÝ DẤU ---
+  // D. XỬ LÝ DẤU THANH
   if (key === "'") {
     e.preventDefault();
     updateText(CONFIG.tones[0]);
@@ -123,7 +120,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // --- XỬ LÝ SỐ ---
+  // E. XỬ LÝ SỐ & KÝ HIỆU (Chỉ chạy nếu không phải các phím trên)
   const symbolEntry = CONFIG.symbols[key] || CONFIG.symbols[kLow];
   if (symbolEntry) {
     e.preventDefault();
@@ -133,10 +130,5 @@ ta.addEventListener("keydown", (e) => {
     currentGroup = cycleGroup;
     lastKey = key;
     return;
-  }
-
-  // Reset khi nhấn phím lạ
-  if (!["Shift", "Control", "Alt"].includes(key)) {
-    // Không reset currentGroup ở đây nếu phím đó là phím chức năng
   }
 });
