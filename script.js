@@ -1,6 +1,5 @@
 const ta = document.getElementById("input");
 
-// CONFIG giữ nguyên như cũ của bạn
 const CONFIG = {
   consonants: {
     t: ["ต", "ฏ", ["ต", "ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ", "ฏ"]],
@@ -8,14 +7,10 @@ const CONFIG = {
     d: ["ด", "ฎ", ["ด", "ฎ"]],
     p: ["ป", "พ", ["ป", "ผ", "พ", "ภ", "ฝ", "ฟ"]],
     s: ["ซ", "ส", ["ซ", "ส", "ศ", "ษ"]],
-    g: ["ง", "ง", ["ง"]],
     c: ["จ", "ฉ", ["จ", "ฉ", "ช", "ฌ"]],
     n: ["น", "ณ", ["น", "ณ"]],
-    m: ["ม", "ม", ["ม"]],
     y: ["ย", "ญ", ["ย", "ญ"]],
-    r: ["ร", "ร", ["ร"]],
     l: ["ล", "ฬ", ["ล", "ฬ"]],
-    w: ["ว", "ว", ["ว"]],
     x: ["อ", "ฮ", ["อ", "ฮ"]]
   },
   vowels: {
@@ -53,6 +48,7 @@ function handleCycle(dir) {
   if (!currentGroup || currentGroup.length <= 1) return;
   const charBefore = ta.value[ta.selectionStart - 1];
   let idx = currentGroup.indexOf(charBefore);
+  
   if (idx !== -1) {
     const nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
     updateText(currentGroup[nextIdx], true);
@@ -62,19 +58,18 @@ function handleCycle(dir) {
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
-  const code = e.code; // Dùng code để bắt phím vật lý
 
+  // Chặn phím hệ thống
   if (e.ctrlKey || e.metaKey || ["Backspace", "Enter", "Tab"].includes(key)) return;
 
-  // --- 1. XỬ LÝ XOAY VÒNG (CYCLE) ƯU TIÊN CAO NHẤT ---
-  // Phím '=' hoặc 'Shift + =' (là dấu +)
-  if (code === "Equal") { 
+  // --- 1. ƯU TIÊN PHÍM CỘNG/TRỪ (CYCLE) ---
+  // Kiểm tra trực tiếp ký tự "+" và "-" để không bị kẹt bởi logic Shift
+  if (key === "+" || key === "=") { 
     e.preventDefault();
     handleCycle(1);
     return;
   }
-  // Phím '-' (Minus)
-  if (code === "Minus") {
+  if (key === "-") {
     e.preventDefault();
     handleCycle(-1);
     return;
@@ -84,8 +79,11 @@ ta.addEventListener("keydown", (e) => {
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
-    // Kiểm tra Shift thật kỹ
-    const charToInsert = (e.shiftKey && key !== kLow) ? shiftDef : def;
+    
+    // Nếu nhấn phím Hoa (Shift) thì ra ký tự thứ 2 trong định nghĩa
+    // Dùng key !== kLow để xác định Shift chắc chắn hơn
+    const charToInsert = (key !== kLow) ? shiftDef : def;
+    
     updateText(charToInsert);
     currentGroup = cycleGroup;
     lastKey = kLow;
@@ -121,12 +119,13 @@ ta.addEventListener("keydown", (e) => {
   if (symbolEntry) {
     e.preventDefault();
     const [def, shiftDef, cycleGroup] = symbolEntry;
-    const charToInsert = e.shiftKey ? shiftDef : def;
+    const charToInsert = (e.shiftKey) ? shiftDef : def;
     updateText(charToInsert);
     currentGroup = cycleGroup;
     lastKey = key;
     return;
   }
 
+  // Reset trạng thái
   if (key !== "Shift") { lastKey = null; currentGroup = null; }
 });
