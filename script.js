@@ -1,15 +1,17 @@
 const ta = document.getElementById("input");
 
 // ==========================================
-// 1. CONFIG: Thêm phần symbols và số
+// 1. CONFIG: Tùy chỉnh cực kỳ linh hoạt
 // ==========================================
 const CONFIG = {
   consonants: {
-    k: ["ก", "ค", ["ข", "ข", "ฆ", "ฃ", "ฅ", "ก"]],
-    t: ["ต", "ฏ", ["ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ", "ฏ", "ต"]],
-    d: ["ด", "ฎ", ["ฎ", "ด"]],
-    p: ["ป", "ผ", ["พ", "ผ", "ภ", "ฝ", "ฟ", "ป"]],
-    s: ["ซ", "ส", ["ส", "ศ", "ษ", "ซ"]],
+    // k: [mặc định, khi Shift, [mảng xoay vòng tiến/lùi]]
+    // Logic: t gõ 'k' -> ก. Nhấn Shift+k -> ค. Nhấn ค rồi bấm '+' -> ข.
+    k: ["ก", "ค", ["ก", "ข", "ค", "ฆ", "ฃ", "ฅ"]],
+    t: ["ต", "ฏ", ["ต", "ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ", "ฏ"]],
+    d: ["ด", "ฎ", ["ด", "ฎ"]],
+    p: ["ป", "พ", ["ป", "ผ", "พ", "ภ", "ฝ", "ฟ"]],
+    s: ["ซ", "ส", ["ซ", "ส", "ศ", "ษ"]],
   },
 
   vowels: {
@@ -22,16 +24,11 @@ const CONFIG = {
 
   tones: ["่", "้", "๊", "๋", "็"],
 
-  // MỚI: Định nghĩa cho số và ký hiệu
-  // Cấu trúc: key: [mặc định, khi shift, mảng xoay vòng]
   symbols: {
     "1": ["1", "๑", ["1", "๑"]],
     "2": ["2", "๒", ["2", "๒"]],
-    "3": ["3", "๓", ["3", "๓"]],
-    "4": ["4", "๔", ["4", "๔"]],
     "5": ["5", "๕", ["5", "๕"]],
-    "$": ["฿", "$", ["฿", "$", "€", "¥"]], // Ví dụ phím $ ra đơn vị tiền tệ
-    "@": ["๏", "@", ["๏", "๚", "๛"]]      // Các ký hiệu cổ trong tiếng Thái
+    "$": ["฿", "$", ["฿", "$", "€", "¥"]],
   }
 };
 
@@ -55,19 +52,22 @@ function updateText(newChar, isReplace = false) {
 
 function handleCycle(dir) {
   if (!currentGroup || currentGroup.length === 0) return;
+  
   const charBefore = ta.value[ta.selectionStart - 1];
   let idx = currentGroup.indexOf(charBefore);
   
   if (idx === -1) {
+    // Nếu chữ hiện tại không có trong group (trường hợp hiếm), lấy chữ đầu/cuối
     updateText(dir > 0 ? currentGroup[0] : currentGroup[currentGroup.length - 1], true);
   } else {
+    // Tính toán index mới (đảm bảo không ra số âm với % trong JS)
     const nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
     updateText(currentGroup[nextIdx], true);
   }
 }
 
 // ==========================================
-// 3. EVENT LISTENER (Cập nhật để nhận diện symbol)
+// 3. EVENT LISTENER
 // ==========================================
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
@@ -75,7 +75,7 @@ ta.addEventListener("keydown", (e) => {
 
   if (e.ctrlKey || e.metaKey || ["Backspace", "Enter", "Tab"].includes(key)) return;
 
-  // A. Xoay vòng (+/-)
+  // A. Xử lý Cycle (+ tiến, - lùi)
   if (key === "=" || key === "+") { e.preventDefault(); handleCycle(1); return; }
   if (key === "-") { e.preventDefault(); handleCycle(-1); return; }
 
@@ -83,14 +83,17 @@ ta.addEventListener("keydown", (e) => {
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
-    const charToInsert = (key !== kLow) ? shiftDef : def;
+    
+    // Gõ k ra ก, Shift+k (K) ra ค
+    const charToInsert = (e.shiftKey) ? shiftDef : def;
+    
     updateText(charToInsert);
-    currentGroup = cycleGroup;
+    currentGroup = cycleGroup; // Gán nhóm xoay vòng để dùng cho +/-
     lastKey = kLow;
     return;
   }
 
-  // C. Xử lý NGUYÊN ÂM
+  // C. Xử lý NGUYÊN ÂM (Telex-style double tap)
   if (CONFIG.vowels[kLow]) {
     e.preventDefault();
     const v = CONFIG.vowels[kLow];
@@ -114,13 +117,11 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // E. MỚI: Xử lý SỐ & KÝ HIỆU
-  // Kiểm tra xem phím nhấn (key) hoặc phím thường (kLow) có trong symbols không
+  // E. Xử lý SỐ & KÝ HIỆU
   const symbolEntry = CONFIG.symbols[key] || CONFIG.symbols[kLow];
   if (symbolEntry) {
     e.preventDefault();
     const [def, shiftDef, cycleGroup] = symbolEntry;
-    // Nếu đang giữ Shift thì ưu tiên ký tự shiftDef
     const charToInsert = (e.shiftKey) ? shiftDef : def;
     updateText(charToInsert);
     currentGroup = cycleGroup;
