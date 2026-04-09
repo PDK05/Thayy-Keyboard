@@ -2,7 +2,7 @@ const ta = document.getElementById("input");
 
 const CONFIG = {
   consonants: {
-    k: ["ก", "ค", ["ค", "ข", "ฆ", "ฅ", "ฃ"]],
+    k: ["ก", "ค", ["ก", "ข", "ค", "ฆ", "ฃ", "ฅ"]],
     t: ["ต", "ฏ", ["ต", "ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ", "ฏ"]],
     d: ["ด", "ฎ", ["ด", "ฎ"]],
     p: ["ป", "พ", ["ป", "ผ", "พ", "ภ", "ฝ", "ฟ"]],
@@ -34,6 +34,7 @@ let currentGroup = null;
 function updateText(newChar, isReplace = false) {
   const pos = ta.selectionStart;
   const val = ta.value;
+
   if (isReplace && pos > 0) {
     ta.value = val.slice(0, pos - 1) + newChar + val.slice(pos);
     ta.selectionStart = ta.selectionEnd = pos;
@@ -44,10 +45,13 @@ function updateText(newChar, isReplace = false) {
 }
 
 function handleCycle(dir) {
-  if (!currentGroup || currentGroup.length <= 1) return;
-  const charBefore = ta.value[ta.selectionStart - 1];
-  let idx = currentGroup.indexOf(charBefore);
-  
+  const pos = ta.selectionStart;
+
+  if (!currentGroup || currentGroup.length <= 1 || pos === 0) return;
+
+  const charBefore = ta.value[pos - 1];
+  const idx = currentGroup.indexOf(charBefore);
+
   if (idx !== -1) {
     const nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
     updateText(currentGroup[nextIdx], true);
@@ -58,39 +62,60 @@ ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // --- 1. LOGIC XOAY VÒNG (CHỈ DÙNG PHÍM ĐƠN) ---
-  // Nếu nhấn '=' mà KHÔNG có Shift -> Xoay vòng tiến
-  if (key === "=" && !e.shiftKey) { 
-    e.preventDefault();
-    handleCycle(1);
-    return; 
-  }
-  // Nếu nhấn '-' mà KHÔNG có Shift -> Xoay vòng lùi
-  if (key === "-" && !e.shiftKey) {
-    e.preventDefault();
-    handleCycle(-1);
+  // =========================
+  // 1. XOAY VÒNG (DÙNG code)
+  // =========================
+  if (e.code === "Equal") {
+    if (!e.shiftKey) {
+      e.preventDefault();
+      handleCycle(1);
+    }
     return;
   }
 
-  // Nếu là Shift + "=" (tức là dấu "+") hoặc các phím hệ thống khác -> Để mặc định chạy
-  if (e.ctrlKey || e.metaKey || ["Backspace", "Enter", "Tab", "Escape"].includes(key)) return;
+  if (e.code === "Minus") {
+    if (!e.shiftKey) {
+      e.preventDefault();
+      handleCycle(-1);
+    }
+    return;
+  }
 
-  // --- 2. XỬ LÝ PHỤ ÂM ---
+  // =========================
+  // 2. PHÍM HỆ THỐNG
+  // =========================
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  if (["Backspace", "Enter", "Tab", "Escape"].includes(key)) {
+    currentGroup = null;
+    lastKey = null;
+    return;
+  }
+
+  // =========================
+  // 3. PHỤ ÂM
+  // =========================
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
+
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
-    // Nhấn k -> ก | Nhấn Shift + k (K) -> ค
     const charToInsert = (e.shiftKey && key !== kLow) ? shiftDef : def;
+
     updateText(charToInsert);
-    currentGroup = cycleGroup; 
+
+    currentGroup = cycleGroup;
     lastKey = kLow;
     return;
   }
 
-  // --- 3. XỬ LÝ NGUYÊN ÂM ---
+  // =========================
+  // 4. NGUYÊN ÂM
+  // =========================
   if (CONFIG.vowels[kLow]) {
     e.preventDefault();
+
     const v = CONFIG.vowels[kLow];
+
     if (lastKey === kLow && v.alt) {
       updateText(v.alt, true);
       lastKey = null;
@@ -98,31 +123,44 @@ ta.addEventListener("keydown", (e) => {
       updateText(v.default);
       lastKey = kLow;
     }
+
     currentGroup = v.variants;
     return;
   }
 
-  // --- 4. XỬ LÝ DẤU ---
+  // =========================
+  // 5. DẤU THANH
+  // =========================
   if (key === "'") {
     e.preventDefault();
+
     updateText(CONFIG.tones[0]);
     currentGroup = CONFIG.tones;
     lastKey = "tone";
     return;
   }
 
-  // --- 5. SỐ & KÝ HIỆU ---
+  // =========================
+  // 6. SỐ & KÝ HIỆU
+  // =========================
   const symbolEntry = CONFIG.symbols[key] || CONFIG.symbols[kLow];
+
   if (symbolEntry) {
-    // Chỉ xử lý nếu không phải là phím + hoặc - đã được lọc ở trên
     e.preventDefault();
+
     const [def, shiftDef, cycleGroup] = symbolEntry;
-    const charToInsert = (e.shiftKey) ? shiftDef : def;
+    const charToInsert = e.shiftKey ? shiftDef : def;
+
     updateText(charToInsert);
+
     currentGroup = cycleGroup;
     lastKey = key;
     return;
   }
 
-  // Nếu là phím khác (bao gồm cả Shift + = để ra dấu +), để trình duyệt tự xử lý
+  // =========================
+  // 7. KHÔNG MATCH → RESET
+  // =========================
+  currentGroup = null;
+  lastKey = null;
 });
