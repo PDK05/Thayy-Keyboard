@@ -2,7 +2,7 @@ const ta = document.getElementById("input");
 
 const CONFIG = {
   consonants: {
-    k: ["ก", "ค", ["ค", "ข", "ฆ", "ฅ", "ฃ"]],
+    k: ["ก", "ค", ["ก", "ข", "ค", "ฆ", "ฅ", "ฃ"]],
     t: ["ต", "ฏ", ["ต", "ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ", "ฏ"]],
     d: ["ด", "ฎ", ["ด", "ฎ"]],
     p: ["ป", "พ", ["ป", "ผ", "พ", "ภ", "ฝ", "ฟ"]],
@@ -62,28 +62,20 @@ ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // =========================
-  // 1. XOAY VÒNG (DÙNG code)
-  // =========================
-  if (e.code === "Equal") {
-    if (!e.shiftKey) {
-      e.preventDefault();
-      handleCycle(1);
-    }
+  // ===== XOAY VÒNG =====
+  if (e.code === "BracketRight") {
+    e.preventDefault();
+    handleCycle(1);
     return;
   }
 
-  if (e.code === "Minus") {
-    if (!e.shiftKey) {
-      e.preventDefault();
-      handleCycle(-1);
-    }
+  if (e.code === "BracketLeft") {
+    e.preventDefault();
+    handleCycle(-1);
     return;
   }
 
-  // =========================
-  // 2. PHÍM HỆ THỐNG
-  // =========================
+  // ===== PHÍM HỆ THỐNG =====
   if (e.ctrlKey || e.metaKey || e.altKey) return;
 
   if (["Backspace", "Enter", "Tab", "Escape"].includes(key)) {
@@ -92,9 +84,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // =========================
-  // 3. PHỤ ÂM
-  // =========================
+  // ===== PHỤ ÂM =====
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
 
@@ -108,9 +98,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // =========================
-  // 4. NGUYÊN ÂM
-  // =========================
+  // ===== NGUYÊN ÂM =====
   if (CONFIG.vowels[kLow]) {
     e.preventDefault();
 
@@ -128,9 +116,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // =========================
-  // 5. DẤU THANH
-  // =========================
+  // ===== DẤU =====
   if (key === "'") {
     e.preventDefault();
 
@@ -140,9 +126,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // =========================
-  // 6. SỐ & KÝ HIỆU
-  // =========================
+  // ===== SỐ =====
   const symbolEntry = CONFIG.symbols[key] || CONFIG.symbols[kLow];
 
   if (symbolEntry) {
@@ -158,9 +142,7 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // =========================
-  // 7. KHÔNG MATCH → RESET
-  // =========================
+  // ===== RESET =====
   currentGroup = null;
   lastKey = null;
 });
