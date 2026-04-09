@@ -1,154 +1,132 @@
 const ta = document.getElementById("input");
 
-// ===== 1. DATA (Dữ liệu tách biệt gốc và biến thể) =====
-const CONS = {
-  // Gốc (thường)
-  k: ["ก"], 
-  g: ["ง"],
-  c: ["จ"],
-  s: ["ซ"],
-  d: ["ด"],
-  t: ["ต"],
-  n: ["น"],
-  b: ["บ"],
-  p: ["ป"],
-  m: ["ม"],
-  f: ["ฟ"],
-  r: ["ร"],
-  l: ["ล"],
-  w: ["ว"],
-  x: ["อ"],
-  y: ["ย"],
-  // Biến thể (Hoa) - Sẽ dùng để xoay vòng khi nhấn =/-
-  K: ["ค", "ข", "ฆ", "ฅ", "ฃ"],
-  C: ["ช", "ฉ", "ฌ"],
-  S: ["ส", "ศ", "ษ", "ซ"],
-  Y: ["ญ", "ย"],
-  D: ["ฎ", "ด"],
-  T: ["ฐ", "ฑ", "ฒ", "ถ", "ท", "ธ"],
-  P: ["ผ", "พ", "ภ"],
-  N: ["ณ"]
+// ==========================================
+// 1. CONFIG: Thêm phần symbols và số
+// ==========================================
+const CONFIG = {
+  consonants: {
+    t: ["ต", "ฏ", ["ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ", "ฏ", "ต"]],
+    d: ["ด", "ฎ", ["ฎ", "ด"]],
+    k: ["ก", "ข", ["ค", "ข", "ฆ", "ฃ", "ฅ", "ก"]],
+    p: ["ป", "ผ", ["พ", "ผ", "ภ", "ฝ", "ฟ", "ป"]],
+    s: ["ซ", "ส", ["ส", "ศ", "ษ", "ซ"]],
+  },
+
+  vowels: {
+    a: { default: "ะ", alt: "า", variants: ["ะ", "ั", "า"] },
+    i: { default: "ิ", alt: "ี", variants: ["ิ", "ี", "ึ", "ื"] },
+    u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
+    e: { default: "เ", alt: "แ", variants: ["เ", "แ"] },
+    o: { default: "โ", alt: null, variants: ["โ", "ไ", "ใ"] }
+  },
+
+  tones: ["่", "้", "๊", "๋", "็"],
+
+  // MỚI: Định nghĩa cho số và ký hiệu
+  // Cấu trúc: key: [mặc định, khi shift, mảng xoay vòng]
+  symbols: {
+    "1": ["1", "๑", ["1", "๑"]],
+    "2": ["2", "๒", ["2", "๒"]],
+    "3": ["3", "๓", ["3", "๓"]],
+    "4": ["4", "๔", ["4", "๔"]],
+    "5": ["5", "๕", ["5", "๕"]],
+    "$": ["฿", "$", ["฿", "$", "€", "¥"]], // Ví dụ phím $ ra đơn vị tiền tệ
+    "@": ["๏", "@", ["๏", "๚", "๛"]]      // Các ký hiệu cổ trong tiếng Thái
+  }
 };
 
-const VOWELS = {
-  a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
-  i: { default: "ิ", alt: "ี", variants: null },
-  u: { default: "ุ", alt: "ู", variants: null },
-  e: { default: "เ", alt: "แ", variants: null },
-  o: { default: "โ", alt: null, variants: ["โ", "ไ", "ใ"] } 
-};
-
-const TONES = ["่", "้", "๊", "๋"];
-
-// ===== 2. STATE (Trạng thái) =====
-let lastGroup = null;
+// ==========================================
+// 2. STATE & CORE LOGIC
+// ==========================================
 let lastKey = null;
-let isAltered = false; 
+let currentGroup = null;
 
-// ===== 3. UTILS (Hàm hỗ trợ) =====
-function insert(text) {
-  if (!text) return;
-  const s = ta.selectionStart;
-  const e = ta.selectionEnd;
-  const v = ta.value;
-  ta.value = v.slice(0, s) + text + v.slice(e);
-  ta.selectionStart = ta.selectionEnd = s + text.length;
-}
-
-function replaceLast(text) {
-  if (!text) return;
-  const s = ta.selectionStart;
-  if (s === 0) return;
-  const v = ta.value;
-  ta.value = v.slice(0, s - 1) + text + v.slice(s);
-  ta.selectionStart = ta.selectionEnd = s;
-}
-
-function cycle(dir) {
-  if (!lastGroup || !lastKey) return;
-
+function updateText(newChar, isReplace = false) {
   const pos = ta.selectionStart;
-  const charBefore = ta.value[pos - 1];
-  
-  // Tìm vị trí trong group hiện tại
-  let idx = lastGroup.indexOf(charBefore);
-
-  // LOGIC NHẢY TẦNG: Nếu gõ 'k' (ก) mà nhấn '=', tìm sang group 'K'
-  if (idx === -1 || lastGroup.length === 1) {
-    const upperKey = lastKey.toUpperCase();
-    if (CONS[upperKey]) {
-      lastGroup = CONS[upperKey]; 
-      idx = lastGroup.indexOf(charBefore);
-    }
+  const val = ta.value;
+  if (isReplace && pos > 0) {
+    ta.value = val.slice(0, pos - 1) + newChar + val.slice(pos);
+    ta.selectionStart = ta.selectionEnd = pos;
+  } else {
+    ta.value = val.slice(0, pos) + newChar + val.slice(pos);
+    ta.selectionStart = ta.selectionEnd = pos + newChar.length;
   }
-
-  // Nếu là chữ gốc (như ก) chưa nằm trong group biến thể, 
-  // khi nhấn '=' sẽ lấy ngay chữ đầu tiên của group biến thể (ข)
-  if (idx === -1) {
-    if (dir > 0) replaceLast(lastGroup[0]);
-    else replaceLast(lastGroup[lastGroup.length - 1]);
-    return;
-  }
-  
-  // Xoay vòng tròn trong group biến thể
-  const newIndex = (idx + dir + lastGroup.length) % lastGroup.length;
-  replaceLast(lastGroup[newIndex]);
 }
 
-// ===== 4. EVENT LISTENER =====
+function handleCycle(dir) {
+  if (!currentGroup || currentGroup.length === 0) return;
+  const charBefore = ta.value[ta.selectionStart - 1];
+  let idx = currentGroup.indexOf(charBefore);
+  
+  if (idx === -1) {
+    updateText(dir > 0 ? currentGroup[0] : currentGroup[currentGroup.length - 1], true);
+  } else {
+    const nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
+    updateText(currentGroup[nextIdx], true);
+  }
+}
+
+// ==========================================
+// 3. EVENT LISTENER (Cập nhật để nhận diện symbol)
+// ==========================================
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // A. Hệ thống
-  if (e.ctrlKey || e.metaKey || ["Backspace", "Delete", "Tab"].includes(key)) return;
+  if (e.ctrlKey || e.metaKey || ["Backspace", "Enter", "Tab"].includes(key)) return;
 
-  // B. Điều hướng (Không reset lastKey để còn cycle được)
-  if (key.startsWith("Arrow")) return;
+  // A. Xoay vòng (+/-)
+  if (key === "=" || key === "+") { e.preventDefault(); handleCycle(1); return; }
+  if (key === "-") { e.preventDefault(); handleCycle(-1); return; }
 
-  // C. CYCLE (= / -)
-  if (key === "=" || key === "+") { e.preventDefault(); cycle(1); return; }
-  if (key === "-") { e.preventDefault(); cycle(-1); return; }
-
-  // D. PHỤ ÂM (Phân biệt hoa thường)
-  if (CONS[key]) {
+  // B. Xử lý PHỤ ÂM
+  if (CONFIG.consonants[kLow]) {
     e.preventDefault();
-    insert(CONS[key][0]);
-    lastGroup = CONS[key];
-    lastKey = key;
-    isAltered = false;
-    return;
-  }
-
-  // E. NGUYÊN ÂM
-  if (VOWELS[kLow]) {
-    e.preventDefault();
-    const vData = VOWELS[kLow];
-    if (lastKey === kLow && !isAltered && vData.alt) {
-      replaceLast(vData.alt);
-      isAltered = true;
-      lastGroup = null;
-    } else {
-      insert(vData.default);
-      isAltered = false;
-      lastGroup = vData.variants || [];
-    }
+    const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
+    const charToInsert = (key !== kLow) ? shiftDef : def;
+    updateText(charToInsert);
+    currentGroup = cycleGroup;
     lastKey = kLow;
     return;
   }
 
-  // F. DẤU THANH
-  if (key === "'") {
+  // C. Xử lý NGUYÊN ÂM
+  if (CONFIG.vowels[kLow]) {
     e.preventDefault();
-    insert(TONES[0]);
-    lastGroup = TONES;
-    lastKey = key;
-    isAltered = false;
+    const v = CONFIG.vowels[kLow];
+    if (lastKey === kLow && v.alt) {
+      updateText(v.alt, true);
+      lastKey = null;
+    } else {
+      updateText(v.default);
+      lastKey = kLow;
+    }
+    currentGroup = v.variants;
     return;
   }
 
-  // Reset cho các phím rác khác
-  if (key !== "Shift") { lastGroup = null; lastKey = null; }
-});
+  // D. Xử lý DẤU THANH
+  if (key === "'") {
+    e.preventDefault();
+    updateText(CONFIG.tones[0]);
+    currentGroup = CONFIG.tones;
+    lastKey = key;
+    return;
+  }
 
-ta.addEventListener("mousedown", () => { lastGroup = null; lastKey = null; });
+  // E. MỚI: Xử lý SỐ & KÝ HIỆU
+  // Kiểm tra xem phím nhấn (key) hoặc phím thường (kLow) có trong symbols không
+  const symbolEntry = CONFIG.symbols[key] || CONFIG.symbols[kLow];
+  if (symbolEntry) {
+    e.preventDefault();
+    const [def, shiftDef, cycleGroup] = symbolEntry;
+    // Nếu đang giữ Shift thì ưu tiên ký tự shiftDef
+    const charToInsert = (e.shiftKey) ? shiftDef : def;
+    updateText(charToInsert);
+    currentGroup = cycleGroup;
+    lastKey = key;
+    return;
+  }
+
+  if (key !== "Shift") { lastKey = null; currentGroup = null; }
+});
