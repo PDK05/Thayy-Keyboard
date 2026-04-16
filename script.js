@@ -26,11 +26,11 @@ const CONFIG = {
   },
   tones: ["่", "้", "๊", "๋", "็"],
   symbols: {
-    "b": ["b", "฿", ["บ", "฿"]],
-    "m": ["m", "ํ", ["ม", "ํ"]],
-    "1": ["1", "๑", ["1", "๑"]],
-    "2": ["2", "๒", ["2", "๒"]],
-    "5": ["5", "๕", ["5", "๕"]]
+    "1": ["1", null, ["1", "๑"]],
+    "2": ["2", null, ["2", "๒"]],
+    "5": ["5", null, ["5", "๕"]],
+    "b": [null, "฿", ["฿"]],
+    "m": [null, "ํ", ["ํ"]]
   }
 };
 
@@ -97,15 +97,27 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===== SỐ & SYMBOLS VỚI SHIFT (ưu tiên trước) =====
+  // ===== SỐ & SYMBOLS =====
   const symbolEntry = CONFIG.symbols[kLow];
-  if (symbolEntry && e.shiftKey) {
-    e.preventDefault();
+  if (symbolEntry) {
     const [def, shiftDef, cycleGroup] = symbolEntry;
-    updateText(shiftDef);
-    currentGroup = cycleGroup;
-    lastKey = kLow;
-    return;
+
+    // Trường hợp 1: Nhấn Shift (ví dụ Shift + B -> ฿)
+    if (e.shiftKey && shiftDef) {
+      e.preventDefault();
+      updateText(shiftDef);
+      currentGroup = cycleGroup;
+      lastKey = kLow;
+      return;
+    }
+    // Trường hợp 2: Phím số (không nhấn Shift, ví dụ gõ 1)
+    else if (!e.shiftKey && def && !CONFIG.consonants[kLow]) {
+      e.preventDefault();
+      updateText(def);
+      currentGroup = cycleGroup;
+      lastKey = kLow;
+      return;
+    }
   }
 
   // ===== PHỤ ÂM =====
@@ -113,9 +125,7 @@ ta.addEventListener("keydown", (e) => {
     e.preventDefault();
 
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
-    const charToInsert = (e.shiftKey && key !== kLow) ? shiftDef : def;
-
-    updateText(charToInsert);
+    updateText(def);
 
     currentGroup = cycleGroup;
     lastKey = kLow;
@@ -147,18 +157,6 @@ ta.addEventListener("keydown", (e) => {
     updateText(CONFIG.tones[0]);
     currentGroup = CONFIG.tones;
     lastKey = "tone";
-    return;
-  }
-
-  // ===== SỐ & SYMBOLS KHÔNG SHIFT =====
-  if (symbolEntry) {
-    e.preventDefault();
-
-    const [def, shiftDef, cycleGroup] = symbolEntry;
-    updateText(def);
-
-    currentGroup = cycleGroup;
-    lastKey = kLow;
     return;
   }
 
