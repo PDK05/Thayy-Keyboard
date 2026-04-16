@@ -46,7 +46,6 @@ function updateText(newChar, isReplace = false) {
 
 function handleCycle(dir) {
   const pos = ta.selectionStart;
-
   if (!currentGroup || currentGroup.length === 0 || pos === 0) return;
 
   const charBefore = ta.value[pos - 1];
@@ -54,14 +53,12 @@ function handleCycle(dir) {
 
   let nextIdx;
   if (idx === -1) {
-    // Nếu chữ hiện tại (ví dụ ก) không nằm trong nhóm xoay vòng
-    if (dir === 1) {
-      nextIdx = 0; // Ấn "=" thì lấy chữ đầu tiên (ค)
-    } else {
-      nextIdx = currentGroup.length - 1; // Ấn "-" thì lấy chữ cuối cùng (ฃ)
-    }
+    // Nếu chữ hiện tại không nằm trong nhóm xoay vòng (chữ gốc)
+    // dir = 1 (ấn =): lấy phần tử đầu tiên [0]
+    // dir = -1 (ấn -): lấy phần tử cuối cùng [length - 1]
+    nextIdx = dir === 1 ? 0 : currentGroup.length - 1;
   } else {
-    // Nếu đã nằm trong nhóm rồi thì xoay vòng bình thường
+    // Nếu đã ở trong nhóm, xoay vòng bình thường
     nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
   }
 
