@@ -21,7 +21,7 @@ const CONFIG = {
     a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
     i: { default: "ิ", alt: "ี", variants: ["ิ", "ี"] },
     u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
-    e: { default: "เ", alt: "แ", variants: [] },
+    e: { default: "เ", alt: "แ", variants: [null] },
     o: { default: "โ", alt: null, variants: ["โ", "ไ"] }
   },
   tones: ["่", "้", "๊", "๋", "็"],
