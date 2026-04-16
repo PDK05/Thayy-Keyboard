@@ -47,15 +47,21 @@ function updateText(newChar, isReplace = false) {
 function handleCycle(dir) {
   const pos = ta.selectionStart;
 
-  if (!currentGroup || currentGroup.length <= 1 || pos === 0) return;
+  if (!currentGroup || currentGroup.length === 0 || pos === 0) return;
 
   const charBefore = ta.value[pos - 1];
   const idx = currentGroup.indexOf(charBefore);
 
-  if (idx !== -1) {
-    const nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
-    updateText(currentGroup[nextIdx], true);
+  let nextIdx;
+  if (idx === -1) {
+    // Nếu chữ hiện tại không nằm trong nhóm xoay vòng, nhảy vào chữ đầu tiên
+    nextIdx = 0;
+  } else {
+    // Nếu đã ở trong nhóm, xoay vòng bình thường
+    nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
   }
+
+  updateText(currentGroup[nextIdx], true);
 }
 
 ta.addEventListener("keydown", (e) => {
