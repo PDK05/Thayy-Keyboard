@@ -63,13 +63,13 @@ ta.addEventListener("keydown", (e) => {
   const kLow = key.toLowerCase();
 
   // ===== XOAY VÒNG =====
-  if (e.code === "BracketRight") {
+  if (e.code === "Equal") {
     e.preventDefault();
     handleCycle(1);
     return;
   }
 
-  if (e.code === "BracketLeft") {
+  if (e.code === "Minus") {
     e.preventDefault();
     handleCycle(-1);
     return;
