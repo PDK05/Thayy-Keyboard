@@ -15,10 +15,10 @@ const CONFIG = {
   },
   vowels: {
     a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
-    i: { default: "ิ", alt: "ี", variants: ["ิ", "ี", "ึ", "ื"] },
+    i: { default: "ิ", alt: "ี", variants: ["ิ", "ี"] },
     u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
     e: { default: "เ", alt: "แ", variants: ["เ", "แ"] },
-    o: { default: "โ", alt: null, variants: ["โ", "ไ", "ใ"] }
+    o: { default: "โ", alt: null, variants: ["โ", "ไ"] }
   },
   tones: ["่", "้", "๊", "๋", "็"],
   symbols: {
