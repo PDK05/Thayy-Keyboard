@@ -14,7 +14,7 @@ const CONFIG = {
     x: ["อ", "ฮ", ["อ", "ฮ"]]
   },
   vowels: {
-    a: { default: "ะ", alt: "า", variants: ["ะ", "ั", "า"] },
+    a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
     i: { default: "ิ", alt: "ี", variants: ["ิ", "ี", "ึ", "ื"] },
     u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
     e: { default: "เ", alt: "แ", variants: ["เ", "แ"] },
