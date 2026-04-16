@@ -54,8 +54,14 @@ function handleCycle(dir) {
 
   let nextIdx;
   if (idx === -1) {
-    nextIdx = 0;  // Nếu chữ hiện tại không nằm trong nhóm, nhảy vào chữ đầu tiên
+    // Nếu chữ hiện tại (ví dụ ก) không nằm trong nhóm xoay vòng
+    if (dir === 1) {
+      nextIdx = 0; // Ấn "=" thì lấy chữ đầu tiên (ค)
+    } else {
+      nextIdx = currentGroup.length - 1; // Ấn "-" thì lấy chữ cuối cùng (ฃ)
+    }
   } else {
+    // Nếu đã nằm trong nhóm rồi thì xoay vòng bình thường
     nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
   }
 
