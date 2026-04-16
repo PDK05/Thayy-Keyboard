@@ -8,9 +8,9 @@ const CONFIG = {
     d: ["ด", "ฎ", ["ด", "ฎ"]],
     t: ["ต", "ฏ", ["ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ"]],
     n: ["น", "ณ", ["น", "ณ"]],
-    b: ["บ"],
+    b: ["บ", "บ", ["บ"]],
     p: ["ป", "พ", ["พ", "ผ", "ภ"]],
-    m: ["ม"],
+    m: ["ม", "ม", ["ม"]],
     y: ["ย", "ญ", ["ญ"]],
     r: ["ร", ["น", "ณ"]],
     l: ["ล", "ฬ", ["ฬ"]],
@@ -26,10 +26,11 @@ const CONFIG = {
   },
   tones: ["่", "้", "๊", "๋", "็"],
   symbols: {
+    "b": ["b", "฿", ["บ", "฿"]],
+    "m": ["m", "ํ", ["ม", "ํ"]],
     "1": ["1", "๑", ["1", "๑"]],
     "2": ["2", "๒", ["2", "๒"]],
     "5": ["5", "๕", ["5", "๕"]]
-    
   }
 };
 
@@ -96,6 +97,17 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
+  // ===== SỐ & SYMBOLS VỚI SHIFT (ưu tiên trước) =====
+  const symbolEntry = CONFIG.symbols[kLow];
+  if (symbolEntry && e.shiftKey) {
+    e.preventDefault();
+    const [def, shiftDef, cycleGroup] = symbolEntry;
+    updateText(shiftDef);
+    currentGroup = cycleGroup;
+    lastKey = kLow;
+    return;
+  }
+
   // ===== PHỤ ÂM =====
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
@@ -138,19 +150,15 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===== SỐ =====
-  const symbolEntry = CONFIG.symbols[key] || CONFIG.symbols[kLow];
-
+  // ===== SỐ & SYMBOLS KHÔNG SHIFT =====
   if (symbolEntry) {
     e.preventDefault();
 
     const [def, shiftDef, cycleGroup] = symbolEntry;
-    const charToInsert = e.shiftKey ? shiftDef : def;
-
-    updateText(charToInsert);
+    updateText(def);
 
     currentGroup = cycleGroup;
-    lastKey = key;
+    lastKey = kLow;
     return;
   }
 
