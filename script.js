@@ -54,10 +54,8 @@ function handleCycle(dir) {
 
   let nextIdx;
   if (idx === -1) {
-    // Nếu chữ hiện tại không nằm trong nhóm xoay vòng, nhảy vào chữ đầu tiên
-    nextIdx = 0;
+    nextIdx = 0;  // Nếu chữ hiện tại không nằm trong nhóm, nhảy vào chữ đầu tiên
   } else {
-    // Nếu đã ở trong nhóm, xoay vòng bình thường
     nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
   }
 
