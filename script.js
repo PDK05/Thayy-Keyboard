@@ -21,7 +21,7 @@ const CONFIG = {
     a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
     i: { default: "ิ", alt: "ี", variants: ["ิ", "ี"] },
     u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
-    e: { default: "เ", alt: "แ", variants: [null] },
+    e: { default: "เ", alt: "แ", variants: [] },
     o: { default: "โ", alt: null, variants: ["โ", "ไ"] }
   },
   tones: ["่", "้", "๊", "๋", "็"],
@@ -141,12 +141,12 @@ ta.addEventListener("keydown", (e) => {
     if (lastKey === kLow && v.alt) {
       updateText(v.alt, true);
       lastKey = null;
+      currentGroup = v.variants && v.variants.length > 0 ? v.variants : null;
     } else {
       updateText(v.default);
       lastKey = kLow;
+      currentGroup = v.variants && v.variants.length > 0 ? v.variants : null;
     }
-
-    currentGroup = v.variants;
     return;
   }
 
