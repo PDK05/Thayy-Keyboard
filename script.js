@@ -121,9 +121,9 @@ ta.addEventListener("keydown", (e) => {
  const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
  
  if ((e.shiftKey || isCapsLock) && shiftDef) {
- updateText(shiftDef); // Shift+K 或 CapsLock+K = ค
+ updateText(shiftDef);
  } else {
- updateText(def); // K = ก
+ updateText(def);
  }
 
  currentGroup = cycleGroup;
@@ -149,13 +149,22 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== DẤU =====
+ // ===== DẤU (循环) =====
  if (key === "'") {
  e.preventDefault();
 
- updateText(CONFIG.tones[0]);
- currentGroup = CONFIG.tones;
- lastKey = "tone";
+ const tones = CONFIG.tones;
+ const pos = ta.selectionStart;
+ 
+ // 检查前面是不是声调
+ if (pos > 0 && tones.includes(ta.value[pos - 1])) {
+ const currentIdx = tones.indexOf(ta.value[pos - 1]);
+ const nextIdx = (currentIdx + 1) % tones.length;
+ updateText(tones[nextIdx], true);
+ } else {
+ // 第一次按 '
+ updateText(tones[0]);
+ }
  return;
  }
 
