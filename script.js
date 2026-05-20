@@ -72,7 +72,7 @@ ta.addEventListener("keydown", (e) => {
  const kLow = key.toLowerCase();
  const isCapsLock = e.getModifierState("CapsLock");
 
- // ===== XOAY VÒNG =====
+ // ===== 辅音循环 =====
  if (e.code === "Equal") {
  e.preventDefault();
  handleCycle(1);
@@ -85,7 +85,7 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== PHÍM HỆ THỐNG =====
+ // ===== 系统键 =====
  if (e.ctrlKey || e.metaKey || e.altKey) return;
 
  if (["Backspace", "Enter", "Tab", "Escape"].includes(key)) {
@@ -94,7 +94,7 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== SỐ & SYMBOLS =====
+ // ===== 符号 =====
  const symbolEntry = CONFIG.symbols[kLow];
  if (symbolEntry) {
  const [def, shiftDef, cycleGroup] = symbolEntry;
@@ -114,7 +114,7 @@ ta.addEventListener("keydown", (e) => {
  }
  }
 
- // ===== PHỤ ÂM (Shift + CapsLock) =====
+ // ===== 辅音 =====
  if (CONFIG.consonants[kLow]) {
  e.preventDefault();
 
@@ -131,7 +131,7 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== NGUYÊN ÂM =====
+ // ===== 元音 =====
  if (CONFIG.vowels[kLow]) {
  e.preventDefault();
 
@@ -149,26 +149,24 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== DẤU (循环) =====
+ // ===== 声调循环 (只有 ' ) =====
  if (key === "'") {
  e.preventDefault();
 
  const tones = CONFIG.tones;
  const pos = ta.selectionStart;
  
- // 检查前面是不是声调
  if (pos > 0 && tones.includes(ta.value[pos - 1])) {
  const currentIdx = tones.indexOf(ta.value[pos - 1]);
  const nextIdx = (currentIdx + 1) % tones.length;
  updateText(tones[nextIdx], true);
  } else {
- // 第一次按 '
  updateText(tones[0]);
  }
  return;
  }
 
- // ===== RESET =====
+ // ===== 重置 =====
  currentGroup = null;
  lastKey = null;
 });
