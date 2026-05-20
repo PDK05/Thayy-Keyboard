@@ -72,31 +72,31 @@ ta.addEventListener("keydown", (e) => {
  const kLow = key.toLowerCase();
  const isCapsLock = e.getModifierState("CapsLock");
 
- // ===== = - _ + 正常打出 =====
+ // ===== = - _ + 如果不是循环状态就直接放行 =====
  if (key === "=" || key === "-" || key === "_" || key === "+") {
  if (!currentGroup || currentGroup.length === 0) {
- return; // 让浏览器正常处理
+ // 放行，不阻止
+ } else {
+ e.preventDefault();
+ if (key === "=") handleCycle(1);
+ if (key === "-") handleCycle(-1);
  }
+ return;
  }
 
- // ===== = 循环 =====
+ // ===== XOAY VÒNG =====
  if (e.code === "Equal") {
  e.preventDefault();
  if (currentGroup && currentGroup.length > 0) {
  handleCycle(1);
- } else {
- return;
  }
  return;
  }
 
- // ===== - 循环 =====
  if (e.code === "Minus") {
  e.preventDefault();
  if (currentGroup && currentGroup.length > 0) {
  handleCycle(-1);
- } else {
- return;
  }
  return;
  }
