@@ -2,26 +2,26 @@ const ta = document.getElementById("input");
 
 const CONFIG = {
  consonants: {
- k: ["ก", "ค", ["ค", "ข", "ฆ", "ฅ", "ฃ"]],
- c: ["จ", "ช", ["ช", "ฉ", "ฌ"]],
- s: ["ซ", "ส", ["ส", "ศ", "ษ"]],
+ k: ["ก", "ค", ["ค", "ก", "ข", "ฆ", "ฅ", "ฃ"]],
+ c: ["จ", "ช", ["ช", "จ", "ฉ", "ฌ"]],
+ s: ["ซ", "ส", ["ส", "ซ", "ศ", "ษ"]],
  d: ["ด", "ฎ", ["ด", "ฎ"]],
- t: ["ต", "ฏ", ["ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ"]],
+ t: ["ต", "ฏ", ["ท", "ต", "ถ", "ธ", "ฑ", "ฒ", "ฐ"]],
  n: ["น", "ณ", ["น", "ณ"]],
  b: ["บ", "บ", ["บ"]],
- p: ["ป", "พ", ["พ", "ผ", "ภ"]],
+ p: ["ป", "พ", ["พ", "ป", "ผ", "ภ"]],
  m: ["ม", "ม", ["ม"]],
- y: ["ย", "ญ", ["ญ"]],
- r: ["ร", ["น", "ณ"]],
- l: ["ล", "ฬ", ["ฬ"]],
- w: ["ว"],
- x: ["อ", "ฮ", ["ฮ"]]
+ y: ["ย", "ญ", ["ญ", "ย"]],
+ r: ["ร", "ร", ["ร", "น", "ณ"]],
+ l: ["ล", "ฬ", ["ฬ", "ล"]],
+ w: ["ว", "ว", ["ว"]],
+ x: ["อ", "ฮ", ["ฮ", "อ"]]
  },
  vowels: {
  a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
  i: { default: "ิ", alt: "ี", variants: ["ิ", "ี"] },
  u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
- e: { default: "เ", alt: "แ", variants: [] },
+ e: { default: "เ", alt: "แ", variants: ["เ", "แ"] },
  o: { default: "โ", alt: null, variants: ["โ", "ไ"] }
  },
  tones: ["่", "้", "๊", "๋", "็"],
@@ -70,6 +70,7 @@ function handleCycle(dir) {
 ta.addEventListener("keydown", (e) => {
  const key = e.key;
  const kLow = key.toLowerCase();
+ const isCapsLock = e.getModifierState("CapsLock");
 
  // ===== XOAY VÒNG =====
  if (e.code === "Equal") {
@@ -113,14 +114,14 @@ ta.addEventListener("keydown", (e) => {
  }
  }
 
- // ===== PHỤ ÂM (đã fix) =====
+ // ===== PHỤ ÂM (Shift + CapsLock) =====
  if (CONFIG.consonants[kLow]) {
  e.preventDefault();
 
  const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
  
- if (e.shiftKey && shiftDef) {
- updateText(shiftDef); // Shift + K = ค
+ if ((e.shiftKey || isCapsLock) && shiftDef) {
+ updateText(shiftDef); // Shift+K 或 CapsLock+K = ค
  } else {
  updateText(def); // K = ก
  }
