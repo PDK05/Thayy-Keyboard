@@ -1,27 +1,25 @@
-const ta = document.getElementById("input");
-
 const CONFIG = {
   consonants: {
-    k: ["ก", "ค", ["ค", "ข", "ฆ", "ฅ", "ฃ"]],
-    c: ["จ", "ช", ["ช", "ฉ", "ฌ"]],
-    s: ["ซ", "ส", ["ส", "ศ", "ษ"]],
+    k: ["ก", "ค", ["ก", "ค", "ข", "ฆ", "ฅ", "ฃ"]],
+    c: ["จ", "ช", ["จ", "ช", "ฉ", "ฌ"]],
+    s: ["ซ", "ส", ["ซ", "ส", "ศ", "ษ"]],
     d: ["ด", "ฎ", ["ด", "ฎ"]],
-    t: ["ต", "ฏ", ["ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ"]],
+    t: ["ต", "ฏ", ["ต", "ฏ", "ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ"]],
     n: ["น", "ณ", ["น", "ณ"]],
     b: ["บ", "บ", ["บ"]],
-    p: ["ป", "พ", ["พ", "ผ", "ภ"]],
+    p: ["ป", "พ", ["ป", "พ", "ผ", "ภ"]],
     m: ["ม", "ม", ["ม"]],
-    y: ["ย", "ญ", ["ญ"]],
-    r: ["ร", ["น", "ณ"]],
-    l: ["ล", "ฬ", ["ฬ"]],
-    w: ["ว"],
-    x: ["อ", "ฮ", ["ฮ"]]
+    y: ["ย", "ญ", ["ย", "ญ"]],
+    r: ["ร", ["ร", "น", "ณ"]],
+    l: ["ล", "ฬ", ["ล", "ฬ"]],
+    w: ["ว", "ว", ["ว"]],
+    x: ["อ", "ฮ", ["อ", "ฮ"]]
   },
   vowels: {
     a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
     i: { default: "ิ", alt: "ี", variants: ["ิ", "ี"] },
     u: { default: "ุ", alt: "ู", variants: ["ุ", "ู"] },
-    e: { default: "เ", alt: "แ", variants: [] },
+    e: { default: "เ", alt: "แ", variants: ["เ", "แ"] },
     o: { default: "โ", alt: null, variants: ["โ", "ไ"] }
   },
   tones: ["่", "้", "๊", "๋", "็"],
@@ -59,23 +57,25 @@ function handleCycle(dir) {
 
   let nextIdx;
   if (idx === -1) {
-    // Nếu chữ hiện tại không nằm trong nhóm xoay vòng (chữ gốc)
-    // dir = 1 (ấn =): lấy phần tử đầu tiên [0]
-    // dir = -1 (ấn -): lấy phần tử cuối cùng [length - 1]
     nextIdx = dir === 1 ? 0 : currentGroup.length - 1;
   } else {
-    // Nếu đã ở trong nhóm, xoay vòng bình thường
     nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
   }
 
   updateText(currentGroup[nextIdx], true);
+  
+  // SỬA LỖI: Hủy phím ghi nhớ trước đó khi chuyển sang chế độ xoay vòng
+  lastKey = null; 
 }
 
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // ===== XOAY VÒNG =====
+  // Bỏ qua nếu người dùng chỉ mới nhấn đè phím Shift
+  if (key === "Shift") return;
+
+  // ===== XOAY VÒNG KÝ TỰ =====
   if (e.code === "Equal") {
     e.preventDefault();
     handleCycle(1);
@@ -91,18 +91,19 @@ ta.addEventListener("keydown", (e) => {
   // ===== PHÍM HỆ THỐNG =====
   if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-  if (["Backspace", "Enter", "Tab", "Escape"].includes(key)) {
+  // Reset bộ nhớ khi di chuyển con trỏ hoặc thao tác xóa/xuống dòng
+  if (["Backspace", "Enter", "Tab", "Escape", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(key)) {
     currentGroup = null;
     lastKey = null;
     return;
   }
 
-  // ===== SỐ & SYMBOLS =====
+// ===== SỐ & SYMBOLS =====
   const symbolEntry = CONFIG.symbols[kLow];
   if (symbolEntry) {
     const [def, shiftDef, cycleGroup] = symbolEntry;
 
-    // Trường hợp 1: Nhấn Shift (ví dụ Shift + B -> ฿)
+    // Nhấn Shift + B -> ฿
     if (e.shiftKey && shiftDef) {
       e.preventDefault();
       updateText(shiftDef);
@@ -110,8 +111,8 @@ ta.addEventListener("keydown", (e) => {
       lastKey = kLow;
       return;
     }
-    // Trường hợp 2: Phím số (không nhấn Shift, ví dụ gõ 1)
-    else if (!e.shiftKey && def && !CONFIG.consonants[kLow]) {
+    // Gõ số bình thường (Không đè Shift)
+    else if (!e.shiftKey && def) {
       e.preventDefault();
       updateText(def);
       currentGroup = cycleGroup;
@@ -120,37 +121,44 @@ ta.addEventListener("keydown", (e) => {
     }
   }
 
-  // ===== PHỤ ÂM =====
+// ===== PHỤ ÂM (ĐÃ SỬA LỖI SHIFT) =====
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
 
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
-    updateText(def);
+    
+    // Kiểm tra nếu đè Shift HOẶC phím gõ vào là chữ IN HOA (khi bật Caps Lock)
+    if ((e.shiftKey || key === key.toUpperCase()) && shiftDef) {
+      updateText(shiftDef);
+    } else {
+      updateText(def);
+    }
 
     currentGroup = cycleGroup;
     lastKey = kLow;
     return;
   }
 
-  // ===== NGUYÊN ÂM =====
+// ===== NGUYÊN ÂM =====
   if (CONFIG.vowels[kLow]) {
     e.preventDefault();
 
     const v = CONFIG.vowels[kLow];
 
-    if (lastKey === kLow && v.alt) {
+    // Ấn liên tiếp cùng 1 phím nguyên âm thường (không đè Shift) để ra ký tự phụ (alt)
+    if (lastKey === kLow && v.alt && !e.shiftKey) {
       updateText(v.alt, true);
-      lastKey = null;
-      currentGroup = v.variants && v.variants.length > 0 ? v.variants : null;
+      lastKey = null; // Reset để lần gõ sau quay về mặc định
     } else {
       updateText(v.default);
       lastKey = kLow;
-      currentGroup = v.variants && v.variants.length > 0 ? v.variants : null;
     }
+    
+    currentGroup = v.variants && v.variants.length > 0 ? v.variants : null;
     return;
   }
 
-  // ===== DẤU =====
+  // ===== DẤU THANH (TONES) =====
   if (key === "'") {
     e.preventDefault();
 
@@ -160,7 +168,8 @@ ta.addEventListener("keydown", (e) => {
     return;
   }
 
-  // ===== RESET =====
+  // ===== RESET MẶC ĐỊNH =====
+  // Cho phép gõ dấu cách hoặc các ký tự Latinh khác không nằm trong bộ lọc tiếng Thái
   currentGroup = null;
   lastKey = null;
-});
+}); // Kết thúc sự kiện keydown
