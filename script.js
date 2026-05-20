@@ -2,14 +2,14 @@ const ta = document.getElementById("input");
 
 const CONFIG = {
  consonants: {
- k: ["ก", "ค", ["ค", "ก", "ข", "ฆ", "ฅ", "ฃ"]],
- c: ["จ", "ช", ["ช", "จ", "ฉ", "ฌ"]],
- s: ["ซ", "ส", ["ส", "ซ", "ศ", "ษ"]],
+ k: ["ก", "ค", ["ค", "ข", "ฆ", "ฅ", "ฃ"]],
+ c: ["จ", "ช", ["ช", "ฉ", "ฌ"]],
+ s: ["ซ", "ส", ["ส", "ศ", "ษ"]],
  d: ["ด", "ฎ", ["ด", "ฎ"]],
- t: ["ต", "ฏ", ["ท", "ต", "ถ", "ธ", "ฑ", "ฒ", "ฐ"]],
+ t: ["ต", "ฏ", ["ท", "ถ", "ธ", "ฑ", "ฒ", "ฐ"]],
  n: ["น", "ณ", ["น", "ณ"]],
  b: ["บ", "บ", ["บ"]],
- p: ["ป", "พ", ["พ", "ป", "ผ", "ภ"]],
+ p: ["ป", "พ", ["พ", "ผ", "ภ"]],
  m: ["ม", "ม", ["ม"]],
  y: ["ย", "ญ", ["ญ", "ย"]],
  r: ["ร", "ร", ["ร", "น", "ณ"]],
@@ -72,10 +72,8 @@ ta.addEventListener("keydown", (e) => {
  const kLow = key.toLowerCase();
  const isCapsLock = e.getModifierState("CapsLock");
 
- // ===== = - _ + 如果不是循环状态就直接放行 =====
  if (key === "=" || key === "-" || key === "_" || key === "+") {
  if (!currentGroup || currentGroup.length === 0) {
- // 放行，不阻止
  } else {
  e.preventDefault();
  if (key === "=") handleCycle(1);
@@ -84,24 +82,18 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== XOAY VÒNG =====
  if (e.code === "Equal") {
  e.preventDefault();
- if (currentGroup && currentGroup.length > 0) {
- handleCycle(1);
- }
+ if (currentGroup && currentGroup.length > 0) handleCycle(1);
  return;
  }
 
  if (e.code === "Minus") {
  e.preventDefault();
- if (currentGroup && currentGroup.length > 0) {
- handleCycle(-1);
- }
+ if (currentGroup && currentGroup.length > 0) handleCycle(-1);
  return;
  }
 
- // ===== 系统键 =====
  if (e.ctrlKey || e.metaKey || e.altKey) return;
 
  if (["Backspace", "Enter", "Tab", "Escape"].includes(key)) {
@@ -110,7 +102,6 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== 符号 =====
  const symbolEntry = CONFIG.symbols[kLow];
  if (symbolEntry) {
  const [def, shiftDef, cycleGroup] = symbolEntry;
@@ -130,7 +121,6 @@ ta.addEventListener("keydown", (e) => {
  }
  }
 
- // ===== 辅音 =====
  if (CONFIG.consonants[kLow]) {
  e.preventDefault();
 
@@ -147,7 +137,6 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== 元音 =====
  if (CONFIG.vowels[kLow]) {
  e.preventDefault();
 
@@ -165,7 +154,6 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== 声调循环 =====
  if (key === "'") {
  e.preventDefault();
 
@@ -182,7 +170,6 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== 重置 =====
  currentGroup = null;
  lastKey = null;
 });
