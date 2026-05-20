@@ -72,16 +72,25 @@ ta.addEventListener("keydown", (e) => {
  const kLow = key.toLowerCase();
  const isCapsLock = e.getModifierState("CapsLock");
 
- // ===== 辅音循环 =====
+ // ===== = 循环 =====
  if (e.code === "Equal") {
  e.preventDefault();
+ if (currentGroup && currentGroup.length > 0) {
  handleCycle(1);
+ } else {
+ updateText("=");
+ }
  return;
  }
 
+ // ===== - 循环 =====
  if (e.code === "Minus") {
  e.preventDefault();
+ if (currentGroup && currentGroup.length > 0) {
  handleCycle(-1);
+ } else {
+ updateText("-");
+ }
  return;
  }
 
@@ -149,7 +158,7 @@ ta.addEventListener("keydown", (e) => {
  return;
  }
 
- // ===== 声调循环 (只有 ' ) =====
+ // ===== 声调循环 =====
  if (key === "'") {
  e.preventDefault();
 
