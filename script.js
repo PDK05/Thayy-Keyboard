@@ -72,8 +72,14 @@ ta.addEventListener("keydown", (e) => {
  const kLow = key.toLowerCase();
  const isCapsLock = e.getModifierState("CapsLock");
 
+ // ===== = - _ + 放行条件 =====
  if (key === "=" || key === "-" || key === "_" || key === "+") {
- if (!currentGroup || currentGroup.length === 0) {
+ const pos = ta.selectionStart;
+ const charBefore = pos > 0 ? ta.value[pos - 1] : "";
+ const hasTone = CONFIG.tones.includes(charBefore);
+ 
+ if (!currentGroup || currentGroup.length === 0 || hasTone) {
+ // 放行
  } else {
  e.preventDefault();
  if (key === "=") handleCycle(1);
