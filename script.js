@@ -103,7 +103,7 @@ ta.addEventListener("keydown", (e) => {
   if (symbolEntry) {
     const [def, shiftDef, cycleGroup] = symbolEntry;
 
-    // Nhấn Shift + B -> ฿
+    // Dùng e.shiftKey kết hợp kiểm tra dữ liệu cấu hình
     if (e.shiftKey && shiftDef) {
       e.preventDefault();
       updateText(shiftDef);
@@ -111,6 +111,14 @@ ta.addEventListener("keydown", (e) => {
       lastKey = kLow;
       return;
     }
+    else if (!e.shiftKey && def) {
+      e.preventDefault();
+      updateText(def);
+      currentGroup = cycleGroup;
+      lastKey = kLow;
+      return;
+    }
+  }
     // Gõ số bình thường (Không đè Shift)
     else if (!e.shiftKey && def) {
       e.preventDefault();
@@ -121,14 +129,16 @@ ta.addEventListener("keydown", (e) => {
     }
   }
 
-// ===== PHỤ ÂM (ĐÃ SỬA LỖI SHIFT) =====
+// ===== PHỤ ÂM (CHỐNG NUỐT PHÍM SHIFT) =====
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
 
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
     
-    // Kiểm tra nếu đè Shift HOẶC phím gõ vào là chữ IN HOA (khi bật Caps Lock)
-    if ((e.shiftKey || key === key.toUpperCase()) && shiftDef) {
+    // Kiểm tra chính xác: Nếu phím Shift đang đè, hoặc CapsLock đang bật, hoặc key nhận được là chữ hoa
+    const isCapital = e.shiftKey || key === key.toUpperCase() || e.getModifierState("CapsLock");
+
+    if (isCapital && shiftDef) {
       updateText(shiftDef);
     } else {
       updateText(def);
