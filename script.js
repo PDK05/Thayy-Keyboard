@@ -10,7 +10,7 @@ const CONFIG = {
     p: ["ป", "พ", ["ป", "พ", "ผ", "ภ"]],
     m: ["ม", "ม", ["ม"]],
     y: ["ย", "ญ", ["ย", "ญ"]],
-    r: ["ร", ["ร", "น", "ณ"]],
+    r: ["ร", "ร", ["ร", "น", "ณ"]],
     l: ["ล", "ฬ", ["ล", "ฬ"]],
     w: ["ว", "ว", ["ว"]],
     x: ["อ", "ฮ", ["อ", "ฮ"]]
@@ -27,11 +27,12 @@ const CONFIG = {
     "1": ["1", null, ["1", "๑"]],
     "2": ["2", null, ["2", "๒"]],
     "5": ["5", null, ["5", "๕"]],
-    "b": [null, "฿", ["฿"]],
-    "m": [null, "ํ", ["ํ"]]
+    b: [null, "฿", ["฿"]],
+    m: [null, "ํ", ["ํ"]]
   }
 };
 
+const ta = document.getElementById("thaiInput");
 let lastKey = null;
 let currentGroup = null;
 
@@ -55,131 +56,94 @@ function handleCycle(dir) {
   const charBefore = ta.value[pos - 1];
   const idx = currentGroup.indexOf(charBefore);
 
-  let nextIdx;
-  if (idx === -1) {
-    nextIdx = dir === 1 ? 0 : currentGroup.length - 1;
-  } else {
-    nextIdx = (idx + dir + currentGroup.length) % currentGroup.length;
-  }
+  let nextIdx = idx === -1 ? (dir === 1 ? 0 : currentGroup.length - 1) : (idx + dir + currentGroup.length) % currentGroup.length;
 
   updateText(currentGroup[nextIdx], true);
-  
-  // SỬA LỖI: Hủy phím ghi nhớ trước đó khi chuyển sang chế độ xoay vòng
-  lastKey = null; 
+
+  lastKey = null; // reset lastKey after cycling
 }
 
 ta.addEventListener("keydown", (e) => {
   const key = e.key;
   const kLow = key.toLowerCase();
 
-  // Bỏ qua nếu người dùng chỉ mới nhấn đè phím Shift
   if (key === "Shift") return;
 
-  // ===== XOAY VÒNG KÝ TỰ =====
+  // Cycle with = and -
   if (e.code === "Equal") {
     e.preventDefault();
     handleCycle(1);
     return;
   }
-
   if (e.code === "Minus") {
     e.preventDefault();
     handleCycle(-1);
     return;
   }
 
-  // ===== PHÍM HỆ THỐNG =====
   if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-  // Reset bộ nhớ khi di chuyển con trỏ hoặc thao tác xóa/xuống dòng
+  // Reset state on system keys
   if (["Backspace", "Enter", "Tab", "Escape", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(key)) {
     currentGroup = null;
     lastKey = null;
     return;
   }
 
-// ===== SỐ & SYMBOLS =====
+  // Symbols
   const symbolEntry = CONFIG.symbols[kLow];
   if (symbolEntry) {
     const [def, shiftDef, cycleGroup] = symbolEntry;
-
-    // Dùng e.shiftKey kết hợp kiểm tra dữ liệu cấu hình
-    if (e.shiftKey && shiftDef) {
+    let charToInsert = e.shiftKey && shiftDef ? shiftDef : def;
+    if (charToInsert) {
       e.preventDefault();
-      updateText(shiftDef);
-      currentGroup = cycleGroup;
-      lastKey = kLow;
-      return;
-    }
-    else if (!e.shiftKey && def) {
-      e.preventDefault();
-      updateText(def);
-      currentGroup = cycleGroup;
-      lastKey = kLow;
-      return;
-    }
-  }
-    // Gõ số bình thường (Không đè Shift)
-    else if (!e.shiftKey && def) {
-      e.preventDefault();
-      updateText(def);
+      updateText(charToInsert);
       currentGroup = cycleGroup;
       lastKey = kLow;
       return;
     }
   }
 
-// ===== PHỤ ÂM (CHỐNG NUỐT PHÍM SHIFT) =====
+  // Consonants
   if (CONFIG.consonants[kLow]) {
     e.preventDefault();
-
     const [def, shiftDef, cycleGroup] = CONFIG.consonants[kLow];
-    
-    // Kiểm tra chính xác: Nếu phím Shift đang đè, hoặc CapsLock đang bật, hoặc key nhận được là chữ hoa
-    const isCapital = e.shiftKey || key === key.toUpperCase() || e.getModifierState("CapsLock");
 
-    if (isCapital && shiftDef) {
-      updateText(shiftDef);
-    } else {
-      updateText(def);
-    }
+    const isCapital = e.shiftKey || key === key.toUpperCase() || e.getModifierState("CapsLock");
+    updateText(isCapital && shiftDef ? shiftDef : def);
 
     currentGroup = cycleGroup;
     lastKey = kLow;
     return;
   }
 
-// ===== NGUYÊN ÂM =====
+  // Vowels
   if (CONFIG.vowels[kLow]) {
     e.preventDefault();
-
     const v = CONFIG.vowels[kLow];
 
-    // Ấn liên tiếp cùng 1 phím nguyên âm thường (không đè Shift) để ra ký tự phụ (alt)
     if (lastKey === kLow && v.alt && !e.shiftKey) {
       updateText(v.alt, true);
-      lastKey = null; // Reset để lần gõ sau quay về mặc định
+      lastKey = null;
     } else {
       updateText(v.default);
       lastKey = kLow;
     }
-    
-    currentGroup = v.variants && v.variants.length > 0 ? v.variants : null;
+
+    currentGroup = v.variants || null;
     return;
   }
 
-  // ===== DẤU THANH (TONES) =====
+  // Tone marks
   if (key === "'") {
     e.preventDefault();
-
     updateText(CONFIG.tones[0]);
     currentGroup = CONFIG.tones;
     lastKey = "tone";
     return;
   }
 
-  // ===== RESET MẶC ĐỊNH =====
-  // Cho phép gõ dấu cách hoặc các ký tự Latinh khác không nằm trong bộ lọc tiếng Thái
+  // Default: reset state
   currentGroup = null;
   lastKey = null;
-}); // Kết thúc sự kiện keydown
+});
