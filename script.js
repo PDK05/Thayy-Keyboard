@@ -72,13 +72,20 @@ ta.addEventListener("keydown", (e) => {
  const kLow = key.toLowerCase();
  const isCapsLock = e.getModifierState("CapsLock");
 
+ // ===== = - _ + 正常打出 =====
+ if (key === "=" || key === "-" || key === "_" || key === "+") {
+ if (!currentGroup || currentGroup.length === 0) {
+ return; // 让浏览器正常处理
+ }
+ }
+
  // ===== = 循环 =====
  if (e.code === "Equal") {
  e.preventDefault();
  if (currentGroup && currentGroup.length > 0) {
  handleCycle(1);
  } else {
- updateText("=");
+ return;
  }
  return;
  }
@@ -89,7 +96,7 @@ ta.addEventListener("keydown", (e) => {
  if (currentGroup && currentGroup.length > 0) {
  handleCycle(-1);
  } else {
- updateText("-");
+ return;
  }
  return;
  }
