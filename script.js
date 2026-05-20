@@ -3,6 +3,7 @@ const ta = document.getElementById("input");
 const CONFIG = {
  consonants: {
  k: ["ก", "ค", ["ค", "ข", "ฆ", "ฅ", "ฃ"]],
+ g: ["ง"],
  c: ["จ", "ช", ["ช", "ฉ", "ฌ"]],
  s: ["ซ", "ส", ["ส", "ศ", "ษ"]],
  d: ["ด", "ฎ", ["ด", "ฎ"]],
