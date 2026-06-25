@@ -24,6 +24,7 @@ const CONFIG = {
  a: { default: "ะ", alt: "า", variants: ["ะ", "ั"] },
  i: { default: "ิ", alt: "ี", variants: ["ิ", "ี"] },
  u: { default: "ุ", alt: "ู"},
+ q: { default: "ึ", alt: "ื"},
  e: { default: "เ", alt: "แ", variants: ["เ", "แ"] },
  o: { default: "โ", alt: null, variants: ["โ", "ไ"] }
  },
@@ -31,7 +32,13 @@ const CONFIG = {
  symbols: {
  "1": ["1", null, ["1", "๑"]],
  "2": ["2", null, ["2", "๒"]],
+ "3": ["2", null, ["3", "๓"]],
+ "4": ["4", null, ["4", "๔"]],
  "5": ["5", null, ["5", "๕"]],
+ "6": ["6", null, ["6", "๖"]],
+ "7": ["2", null, ["7", "๗"]],
+ "8": ["4", null, ["8", "๘"]],
+ "9": ["5", null, ["9", "๙"]],
  "b": [null, "฿", ["฿"]],
  "m": [null, "ํ", ["ํ"]]
  }
